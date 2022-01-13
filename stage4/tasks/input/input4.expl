@@ -1,0 +1,7 @@
+begin
+decl
+int alpha[10];
+enddecl
+read (alpha[0]);
+write(alpha[11]);
+end;

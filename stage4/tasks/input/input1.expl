@@ -1,0 +1,8 @@
+begin
+decl
+int alpha,beta;
+enddecl
+read (alpha);
+read (beta);
+write(alpha+beta);
+end;

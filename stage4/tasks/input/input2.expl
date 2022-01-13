@@ -1,0 +1,7 @@
+begin
+decl
+string alpha;
+enddecl
+read (alpha);
+write(alpha);
+end;
