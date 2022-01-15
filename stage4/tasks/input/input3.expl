@@ -1,8 +1,0 @@
-begin
-decl
-int alpha[10];
-enddecl
-read (alpha[0]);
-alpha[0] = alpha[0] * 10;
-write(alpha[0]);
-end;

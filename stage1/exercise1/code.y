@@ -4,6 +4,8 @@
 	#include "exptree.h"
 	#include "exptree.c"
 	int yylex(void);
+	void yyerror(char const *s);
+	
 %}
 
 %union{
@@ -42,7 +44,7 @@ expr : expr PLUS expr		{$$ = makeOperatorNode('+',$1,$3);}
 
 %%
 
-yyerror(char const *s)
+void yyerror(char const *s)
 {
     printf("yyerror %s",s);
 }

@@ -14,3 +14,5 @@ struct tnode* makeOperatorNode(char c,struct tnode *l,struct tnode *r);
 	
 /*To evaluate an expression tree*/
 int evaluate(struct tnode *t);
+
+void postfix(struct tnode *t);

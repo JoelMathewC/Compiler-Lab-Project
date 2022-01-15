@@ -52,7 +52,7 @@ void prefix(struct tnode *t){
 }
 
 
-char* postfix(struct tnode *t){
+void postfix(struct tnode *t){
 
 	if(t == NULL)
 		return;

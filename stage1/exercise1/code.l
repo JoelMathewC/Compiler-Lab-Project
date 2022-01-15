@@ -3,7 +3,7 @@
 	#include <stdio.h>
 	#include "y.tab.h"
 	#include "exptree.h"
-
+	void yyerror(char const *s);
 	int number;
 
 %}

@@ -73,8 +73,10 @@
 	#include "exptree.h"
 	#include "exptree.c"
 	int yylex(void);
+	void yyerror(char const *s);
+	
 
-#line 78 "y.tab.c"
+#line 80 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -142,12 +144,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 9 "code.y"
+#line 11 "code.y"
 
 	struct tnode *no;
 	
 
-#line 151 "y.tab.c"
+#line 153 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -523,7 +525,7 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    20,    20,    35,    36,    37,    38,    39,    40
+       0,    22,    22,    37,    38,    39,    40,    41,    42
 };
 #endif
 
@@ -1316,7 +1318,7 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 20 "code.y"
+#line 22 "code.y"
                         {
 				(yyval.no) = (yyvsp[0].no);
 				printf("Postfix : ");
@@ -1330,47 +1332,47 @@ yyreduce:
 				
 				exit(1);
 			}
-#line 1334 "y.tab.c"
+#line 1336 "y.tab.c"
     break;
 
   case 3:
-#line 35 "code.y"
+#line 37 "code.y"
                                 {(yyval.no) = makeOperatorNode('+',(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1340 "y.tab.c"
+#line 1342 "y.tab.c"
     break;
 
   case 4:
-#line 36 "code.y"
+#line 38 "code.y"
                                 {(yyval.no) = makeOperatorNode('-',(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1346 "y.tab.c"
+#line 1348 "y.tab.c"
     break;
 
   case 5:
-#line 37 "code.y"
+#line 39 "code.y"
                                 {(yyval.no) = makeOperatorNode('*',(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1352 "y.tab.c"
+#line 1354 "y.tab.c"
     break;
 
   case 6:
-#line 38 "code.y"
+#line 40 "code.y"
                                 {(yyval.no) = makeOperatorNode('/',(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1358 "y.tab.c"
+#line 1360 "y.tab.c"
     break;
 
   case 7:
-#line 39 "code.y"
+#line 41 "code.y"
                                 {(yyval.no) = (yyvsp[-1].no);}
-#line 1364 "y.tab.c"
+#line 1366 "y.tab.c"
     break;
 
   case 8:
-#line 40 "code.y"
+#line 42 "code.y"
                                 {(yyval.no) = (yyvsp[0].no);}
-#line 1370 "y.tab.c"
+#line 1372 "y.tab.c"
     break;
 
 
-#line 1374 "y.tab.c"
+#line 1376 "y.tab.c"
 
       default: break;
     }
@@ -1602,10 +1604,10 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 43 "code.y"
+#line 45 "code.y"
 
 
-yyerror(char const *s)
+void yyerror(char const *s)
 {
     printf("yyerror %s",s);
 }

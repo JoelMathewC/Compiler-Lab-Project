@@ -6,6 +6,7 @@
 	#include "arith.h"
 	#include "arith.c"
 	int yylex(void);
+	void yyerror(char const *s);
 %}
 
 %union{
@@ -66,7 +67,7 @@ expr : PLUS expr expr		{$$ = makeOperatorNode('+',$2,$3);}
 
 %%
 
-yyerror(char const *s)
+void yyerror(char const *s)
 {
     printf("yyerror %s",s);
 }

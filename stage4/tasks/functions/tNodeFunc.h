@@ -5,16 +5,18 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, int index, int type, int nodetype, struct Gsymbol* Gentry, struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype type, node_type nodetype, struct Gsymbol* Gentry, struct tnode *l, struct tnode *r);
 
 
 
 
-struct tnode* makeIdNode(char* c, struct SymbolTable* st, int index);
+struct tnode* makeIdNode(char* c, struct SymbolTable* st, struct tnode* index1, struct tnode* index2);
 
 struct tnode* makeNumNode(int n);
 
 struct tnode* makeStringNode(char* str);
+
+struct tnode* makePtrIdNode(struct tnode* c, struct SymbolTable* st, struct tnode* addr);
 	
 
 struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r);
@@ -33,9 +35,15 @@ struct tnode* makeWhileBlock(struct tnode* cond, struct tnode* body);
 
 struct tnode* makeDoWhileBlock(struct tnode* cond, struct tnode* body);
 
-struct tnode* makeJumpNode(int nodetype);
+struct tnode* makeJumpNode(node_type nodetype);
 
-boolean validateArr(struct tnode* node);
+boolean isSymbolPtr(struct Gsymbol* g);
+
+boolean isValPtr(struct tnode* g);
+
+/*boolean validateArr(struct tnode* node);*/
+
+/*boolean validateOper(struct tnode* node);*/
 
 
 
