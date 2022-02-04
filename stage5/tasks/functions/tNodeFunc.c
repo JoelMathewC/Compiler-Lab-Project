@@ -1,4 +1,4 @@
-struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype dtype, node_type nodetype, struct Gsymbol* Gentry, struct tnode *l, struct tnode *r){
+struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype dtype, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct tnode *l, struct tnode *r){
 	struct tnode* node;
 	node = (struct tnode*)malloc(sizeof(struct tnode));
 	
@@ -38,35 +38,41 @@ struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct t
 	}
 	
 	node -> Gentry = Gentry;
+	node -> Lentry = Lentry;
 	node -> nodetype = nodetype;
 	node -> left = l;
 	node -> right = r;
 	return node;
 }
 
-struct tnode* makeIdNode(char* c, struct SymbolTable* st, struct tnode* index1, struct tnode* index2){
+struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* index1, struct tnode* index2){
 
-	struct Gsymbol* temp = Lookup(st,c);
+	struct Gsymbol* temp_g = GlobalLookup(gst,c);
+	struct Lsymbol* temp_l = LocalLookup(lst,c);
 	union Data emp_data;
 	
 	//if entry does not exist in symbol table
-	if(temp == NULL){
+	if(temp_g == NULL && temp_l == NULL){
 		yyerror("Undefined Variable Referenced\n");
 		exit(0);
 	}
+	else if(temp_l != NULL)
+		temp_g = NULL;
+	else
+		temp_l = NULL;
 	
 
 	//invalid []
-	if(temp -> dim == 0 && index1 != NULL && isSymbolPtr(temp) == False){ // 0D trying to access first dimension
+	if(temp_g != NULL && temp_g -> dim == 0 && index1 != NULL && isSymbolPtr(temp_g) == False){ // 0D trying to access first dimension
 		printf("%s is not accessible to a first dimension\n",c);
 		exit(0);
 	}
-	else if(temp -> dim == 1 && index2 != NULL){ // 1D array trying to access second dimension
+	else if(temp_g != NULL && temp_g -> dim == 1 && index2 != NULL){ // 1D array trying to access second dimension
 		printf("%s is not accessible to a second dimension\n",c);
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, index1, index2, temp -> dtype, leaf_node, temp, NULL, NULL);
+	return createTree(emp_data, c, index1, index2, temp_g == NULL ? temp_l -> dtype: temp_g -> dtype, leaf_node, temp_g, temp_l, NULL, NULL);
 }
 
 
@@ -75,12 +81,12 @@ struct tnode* makeNumNode(int n){
 	data.num = n;
 	
 
-	return createTree(data,NULL, NULL, NULL,intType, leaf_node, NULL, NULL, NULL);
+	return createTree(data,NULL, NULL, NULL,intType, leaf_node, NULL, NULL, NULL, NULL);
 }
 
-struct tnode* makePtrIdNode(struct tnode* ptr, struct SymbolTable* st, struct tnode* addr){
-	struct Gsymbol* ptr_entry = Lookup(st,ptr -> varname);
-	struct Gsymbol* addr_entry = Lookup(st,addr -> varname);
+struct tnode* makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct tnode* addr){
+	struct Gsymbol* ptr_entry = GlobalLookup(gst,ptr -> varname);
+	struct Gsymbol* addr_entry = GlobalLookup(gst,addr -> varname);
 	union Data emp_data;
 	
 	//if entry does not exist in symbol table
@@ -103,7 +109,7 @@ struct tnode* makePtrIdNode(struct tnode* ptr, struct SymbolTable* st, struct tn
 	ptr_entry -> dim = addr_entry -> dim;
 	ptr_entry -> shape = addr_entry -> shape;
 	
-	return createTree(emp_data,NULL, NULL, NULL,ptr_entry -> dtype, leaf_node, NULL, NULL, NULL);
+	return createTree(emp_data,NULL, NULL, NULL,ptr_entry -> dtype, leaf_node, ptr_entry, NULL, NULL, NULL);
 }
 
 struct tnode* makeStringNode(char* str){
@@ -111,7 +117,7 @@ struct tnode* makeStringNode(char* str){
 	data.str = str;
 	
 	struct tNode* index[2];
-	return createTree(data, NULL, NULL, NULL, stringType,leaf_node, NULL, NULL, NULL);
+	return createTree(data, NULL, NULL, NULL, stringType,leaf_node, NULL, NULL, NULL, NULL);
 }
 
 
@@ -159,19 +165,19 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 	}
 	
 	union Data emp_data;
-	return createTree(emp_data,NULL,NULL, NULL,type , op, NULL, l, r);
+	return createTree(emp_data,NULL,NULL, NULL,type , op, NULL, NULL, l, r);
 }
 
 
 struct tnode* makeConnectorNode(struct tnode *l,struct tnode *r){
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, connector, NULL, l, r);
+	return createTree(emp_data, NULL,NULL,NULL,noType, connector, NULL, NULL, l, r);
 }
 
 struct tnode* makeReadNode(struct tnode *l){ // read node has only a left child
 	union Data emp_data;
 	if(l -> dtype == intType || l -> dtype == stringType)
-		return createTree(emp_data,NULL,NULL,NULL,noType,read,NULL,l,NULL);
+		return createTree(emp_data,NULL,NULL,NULL,noType,read,NULL, NULL,l,NULL);
 	else{
 		printf("Error: Cannot Read into array\n");
 		exit(1);
@@ -181,7 +187,7 @@ struct tnode* makeReadNode(struct tnode *l){ // read node has only a left child
 struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 	union Data emp_data;
 	if(l -> dtype == intType || l -> dtype == stringType)
-		return createTree(emp_data,NULL,NULL,NULL,noType,write,NULL,l,NULL);
+		return createTree(emp_data,NULL,NULL,NULL,noType,write,NULL, NULL,l,NULL);
 	else{
 		printf("Error: Cannot Write array\n");
 		exit(1);
@@ -190,24 +196,24 @@ struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 
 struct tnode* makeJumpNode(node_type nodetype){
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, nodetype,NULL,NULL,NULL);
+	return createTree(emp_data, NULL,NULL,NULL,noType, nodetype,NULL, NULL,NULL,NULL);
 }
 
 struct tnode* makeIfElseBlock(struct tnode* cond, struct tnode* then_node, struct tnode* else_node){// left child is condition, right child is connector (left: if, right: else)
 	union Data emp_data;
-	struct tnode* node1 = createTree(emp_data, NULL,NULL,NULL,noType, then_else_node, NULL, then_node,else_node);
-	struct tnode* node2 = createTree(emp_data, NULL,NULL,NULL,noType, if_node, NULL, cond,node1);
+	struct tnode* node1 = createTree(emp_data, NULL,NULL,NULL,noType, then_else_node, NULL, NULL, then_node,else_node);
+	struct tnode* node2 = createTree(emp_data, NULL,NULL,NULL,noType, if_node, NULL, NULL, cond,node1);
 	return node2;
 }
 
 struct tnode* makeWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, while_node, NULL, cond, body);
+	return createTree(emp_data, NULL,NULL,NULL,noType, while_node, NULL, NULL, cond, body);
 }
 
 struct tnode* makeDoWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, do_while, NULL, cond, body);
+	return createTree(emp_data, NULL,NULL,NULL,noType, do_while, NULL, NULL, cond, body);
 }
 
 

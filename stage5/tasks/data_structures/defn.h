@@ -1,5 +1,6 @@
 //nodetype
 typedef  int node_type;
+#define func_node -2
 #define leaf_node -1
 #define connector 0
 #define read 1
@@ -36,6 +37,10 @@ typedef int datatype;
 #define intPtrType 7
 #define strPtrType 8
 #define noType 9
+
+//SymbolTable Type
+#define global 1
+#define local 2
 
 // Declaration of enum
 typedef enum { False, True } boolean;

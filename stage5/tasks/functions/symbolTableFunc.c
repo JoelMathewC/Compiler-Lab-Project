@@ -1,11 +1,26 @@
 
-struct Gsymbol* Lookup(struct SymbolTable* st,char* name){
+struct Gsymbol* GlobalLookup(struct GSymbolTable* gst, char* name){
 	
-	if(st == NULL)
+	if(gst == NULL)
 		return NULL;
-
-	struct Gsymbol* temp = st -> head;
 	
+	struct Gsymbol* temp_g = gst -> head;
+	
+	while(temp_g != NULL){
+		if(strcmp(temp_g -> name,name) == 0){
+			return temp_g;
+		}
+		temp_g = temp_g -> next;
+	}
+	
+	return NULL;
+}
+
+struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
+	if(lst == NULL)
+		return NULL;
+		
+	struct Lsymbol* temp = lst -> head;
 	while(temp != NULL){
 		if(strcmp(temp -> name,name) == 0){
 			return temp;
@@ -14,8 +29,9 @@ struct Gsymbol* Lookup(struct SymbolTable* st,char* name){
 	}
 	
 	return NULL;
+	
 }
-void Install(struct SymbolTable* st,char* name, datatype type, int dim, int shape[2]){
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2]){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
 	switch(type){
@@ -54,48 +70,106 @@ void Install(struct SymbolTable* st,char* name, datatype type, int dim, int shap
 	elem -> binding = (dim == -1) ? -1 : getMemLoc(mem);
 	elem -> next = NULL;
 	
-	struct Gsymbol* temp = st -> head;
-	if(st -> head == NULL)
-		st -> head = elem;
+	struct Gsymbol* temp = gst -> head;
+	if(gst -> head == NULL)
+		gst -> head = elem;
 	else{
-		while(temp -> next != NULL)
+		while(temp!= NULL){
+			if(strcmp(temp -> name,name) == 0){ //if the identifier has already been used
+				printf("Error: Repeated use of identifier %s",name);
+				exit(0);
+			}
+			if(temp -> next == NULL)
+				break;
 			temp = temp -> next;
+		}
 		
 		temp -> next = elem;
 	}
 	
 }
 
-void generateSymbolTable(struct SymbolTable* st, struct dnode* root, datatype dtype){
+
+void LocalInstall(struct LSymbolTable* lst, char* name, datatype type){
+	struct Lsymbol* elem = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
+
+
+	elem -> name = name;
+	elem -> dtype = type;
+	
+	elem -> binding = getMemLoc(1);
+	elem -> next = NULL;
+	
+	struct Lsymbol* temp = lst -> head;
+	if(lst -> head == NULL)
+		lst -> head = elem;
+	else{
+		while(temp!= NULL){
+			if(strcmp(temp -> name,name) == 0){ //if the identifier has already been used
+				printf("Error: Repeated use of identifier %s",name);
+				exit(0);
+			}
+			if(temp -> next == NULL)
+				break;
+			temp = temp -> next;
+		}
+		
+		temp -> next = elem;
+	}
+	
+}
+
+void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, datatype dtype){
 
 	if(root == NULL)
 		return;
 	
 	switch(root -> nodetype){
-		case connector: generateSymbolTable(st,root -> left,dtype);
-				generateSymbolTable(st,root -> right,dtype);
+		case connector: generateGlobalSymbolTable(gst,root -> left,dtype);
+				generateGlobalSymbolTable(gst,root -> right,dtype);
 				break;
-		
-/*		case intSingleArrType:*/
-/*		case strSingleArrType:	*/
 		case stringType:
-		case intType: generateSymbolTable(st, root -> left, root -> nodetype);
+		case intType: generateGlobalSymbolTable(gst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: 
-				Install(st,root -> varname, dtype, root -> dim, root -> shape);
+		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape);
+				break;
+				
+		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape);
 				break;
 	}
 	
 }
 
 
-void printSymbolTable(struct SymbolTable* st){
+void generateLocalSymbolTable(struct LSymbolTable* lst, struct dnode* root, datatype dtype){
+	if(root == NULL)
+		return;
+	
+	switch(root -> nodetype){
+		case connector: generateLocalSymbolTable(lst,root -> left,dtype);
+				generateLocalSymbolTable(lst,root -> right,dtype);
+				break;
+		case stringType:
+		case intType: generateLocalSymbolTable(lst, root -> left, root -> nodetype);
+				break;
+			
+		case leaf_node: LocalInstall(lst,root -> varname, dtype);
+				break;
+				
+		case func_node: LocalInstall(lst,root -> varname, dtype);
+				break;
+	}
+	
+}
 
-	struct Gsymbol *temp = st -> head;
+void printGlobalSymbolTable(struct GSymbolTable* gst){
+
+	struct Gsymbol *temp = gst -> head;
 	
 	char ch[20];
 	
+	printf("Global Symbol Table:\n");
 	while(temp != NULL){
 	
 		switch(temp -> dtype){
@@ -117,7 +191,43 @@ void printSymbolTable(struct SymbolTable* st){
 			case strPtrType: strcpy(ch,"string*");	 	
 				break;
 		}
-		printf("Varname: %s, Datatype: %s, Size: %d\n",temp -> name, ch,temp -> shape[0] * (temp -> shape[1] == 0 ? 1 : temp -> shape[1]));
+		printf("Varname: %s, Datatype: %s\n",temp -> name, ch);
 		temp = temp -> next;
 	}
+	printf("\n");
+}
+
+
+
+void printLocalSymbolTable(struct LSymbolTable* lst){
+
+	struct Lsymbol *temp = lst -> head;
+	
+	char ch[20];
+	printf("Local Symbol Table:\n");
+	while(temp != NULL){
+	
+		switch(temp -> dtype){
+	
+			case intType: strcpy(ch,"int");
+				break;
+			case stringType: strcpy(ch,"string");
+				break;
+			case intSingleArrType: strcpy(ch,"int[]");
+				break;
+			case strSingleArrType: strcpy(ch,"string[]");	 	
+				break;
+			case intDoubleArrType: strcpy(ch,"int[][]");
+				break;
+			case strDoubleArrType: strcpy(ch,"string[][]");	 	
+				break;
+			case intPtrType: strcpy(ch,"int*");
+				break;
+			case strPtrType: strcpy(ch,"string*");	 	
+				break;
+		}
+		printf("Varname: %s, Datatype: %s\n",temp -> name, ch);
+		temp = temp -> next;
+	}
+	printf("\n");
 }

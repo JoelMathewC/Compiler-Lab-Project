@@ -1,0 +1,20 @@
+
+decl
+int a;
+string b;
+int func();
+int arr1d[10];
+int arr2d[10][10];
+int *ptr;
+enddecl
+
+int main(){
+decl
+	int c,d;
+	string a;
+enddecl
+begin
+	read(c);
+	read(d);
+end
+}

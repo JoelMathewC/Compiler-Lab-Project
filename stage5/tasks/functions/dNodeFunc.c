@@ -15,8 +15,23 @@ struct dnode* createDTree(char* c, int dim, int shape[2], node_type nodetype, st
 	return node;
 }
 
-struct dnode* declIdNode(char* c,int dim, int shape[2]){
+struct dnode* declIdNode(char* c, int shape_0, int shape_1, int dim){
+	int* shape = (int*)malloc(2*sizeof(int));
+	shape[0] = shape_0;
+	shape[1] = shape_1; 
+					
+	if(shape[0] < 0 || shape[1] < 0){
+		printf("Error: Invalid Index\n");
+    		exit(0);
+	}
 	return createDTree(c,dim,shape,leaf_node,NULL,NULL);
+}
+
+struct dnode* declFuncNode(char*c){ //dimension of functions is by default 0
+	int* shape = (int*)malloc(2*sizeof(int));
+	shape[0] = 0;
+	shape[1] = 0; 
+	return createDTree(c,0,shape,func_node,NULL,NULL);
 }
 
 struct dnode* makeDConnectorNode(struct dnode *l,struct dnode *r){

@@ -5,18 +5,18 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype type, node_type nodetype, struct Gsymbol* Gentry, struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype type, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct tnode *l, struct tnode *r);
 
 
 
 
-struct tnode* makeIdNode(char* c, struct SymbolTable* st, struct tnode* index1, struct tnode* index2);
+struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* index1, struct tnode* index2);
 
 struct tnode* makeNumNode(int n);
 
 struct tnode* makeStringNode(char* str);
 
-struct tnode* makePtrIdNode(struct tnode* c, struct SymbolTable* st, struct tnode* addr);
+struct tnode* makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct tnode* addr);
 	
 
 struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r);

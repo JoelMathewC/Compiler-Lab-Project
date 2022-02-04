@@ -19,6 +19,7 @@ strings \"((\\\")|[^"])*\"
 numbers [0-9]+
 
 %%
+main		{return MAIN;}
 begin		{return START;}
 end		{return END;}
 decl		{return DECL;}
@@ -41,7 +42,7 @@ until		{return UNTIL;}
 {identifier}	{yylval.string = strdup(yytext); return ID;}
 {numbers}	{yylval.number = atoi(yytext); return NUM;}
 {strings}	{yylval.string = strdup(yytext); return STRING;}
-[,()\[\]]	{return *yytext;}
+[,()\[\]{}]	{return *yytext;}
 "+"		{return PLUS;}
 "-"		{return MINUS;}
 "*"		{return STAR;}

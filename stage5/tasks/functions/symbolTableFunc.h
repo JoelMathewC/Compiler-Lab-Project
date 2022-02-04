@@ -1,8 +1,16 @@
 
-struct Gsymbol* Lookup(struct SymbolTable* st,char* name); // Returns a pointer to the symbol table entry for the variable, returns NULL otherwise.
+struct Gsymbol* GlobalLookup(struct GSymbolTable* gst, char* name); // Returns a pointer to the symbol table entry for the variable, returns NULL otherwise.
 
-void Install(struct SymbolTable* st,char* name, datatype type, int dim, int shape[2]); // Creates a symbol table entry.
+struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name);
 
-void generateSymbolTable(struct SymbolTable* st, struct dnode* root, datatype dtype);
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2]); // Creates a symbol table entry.
 
-void printSymbolTable(struct SymbolTable* st);
+void LocalInstall(struct LSymbolTable* lst, char* name, datatype type); 
+
+void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, datatype dtype);
+
+void generateLocalSymbolTable(struct LSymbolTable* lst, struct dnode* root, datatype dtype);
+
+void printGlobalSymbolTable(struct GSymbolTable* gst);
+
+void printLocalSymbolTable(struct LSymbolTable* lst);
