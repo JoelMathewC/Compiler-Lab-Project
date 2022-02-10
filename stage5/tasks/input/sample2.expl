@@ -1,0 +1,9 @@
+int main(){
+decl
+	int c,d;
+enddecl
+begin
+	read(c);
+	write(c);
+end
+}

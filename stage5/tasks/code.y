@@ -36,7 +36,9 @@
 	
 	struct GSymbolTable* gst;
 	struct LSymbolTable* lst;
-	void MainFunc(struct tnode* t);
+	FILE* startCodeGen();
+	void endCodeGen(FILE *fp);
+	FILE *fp;
 %}
 
 %union{
@@ -50,7 +52,7 @@
 }
 
 %type <at> ArgList
-%type <pt> Param ParamList FName
+%type <pt> Param ParamList
 %type <no> program MainBlock FdefBlock Fdef 
 %type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid
 %type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier
@@ -64,7 +66,7 @@
 %token READ WRITE
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL
-%token BREAK CONTINUE
+%token BREAK CONTINUE RETURN
 
 %nonassoc GT GTE LT LTE EQ NEQ
 %left PLUS MINUS
@@ -74,17 +76,18 @@
 
 %%
 
-program : GdeclBlock FdefBlock MainBlock	{MainFunc($3);}
-	| GdeclBlock MainBlock			{MainFunc($2);}
-	| MainBlock				{MainFunc($1);}
+program : GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
+	| GdeclBlock MainBlock			{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
+	| MainBlock				{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
 	;
 	
 GdeclBlock : DECL GdeclList ENDDECL 	{
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
-						generateGlobalSymbolTable(gst,$2,noType);	
-						printGlobalSymbolTable(gst);		
+						generateGlobalSymbolTable(gst,$2,noType);
+						fp = startCodeGen();	
+						fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space	
 					}
-	| DECL ENDDECL			{}
+	| DECL ENDDECL			{gst = NULL;}
 	;
 	
 GdeclList : GdeclList Gdecl		{$$ = makeDConnectorNode($1,$2);}
@@ -114,17 +117,18 @@ FdefBlock : FdefBlock Fdef				{}
 	;
 
 Fdef : FName '{' LdeclBlock START Slist END '}'		{
-										//lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
-										addParamToLST(lst,$1);
-										//generateLocalSymbolTable(lst,$3,noType);
-										//lst = NULL;
+									struct Gsymbol* g = GlobalLookup(gst,$<string>1);
+									funcCodeGen($5, fp,g -> binding);
+									lst = NULL;
 								}
 	;
-	
-FName: Type ID '(' ParamList ')'				{
-									verifyFuncHead(gst,$<string>2,$<number>1,$4);
-									$$ = $4; //pass the param list
-								}
+
+FName : Type ID '(' ParamList ')'			{
+								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
+								verifyFuncHead(gst,$<string>2,$<number>1,$4);
+								addParamToLST(lst,$4);
+								$<string>$ = $<string>2;
+							}
 	;
 
 ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
@@ -135,16 +139,21 @@ ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
 Param : Type ID					{$$ = makeParamStruct($<string>2,$<number>1);}
 	;
 	 
-MainBlock : INT MAIN '(' ')' '{' LdeclBlock START Slist END'}'	{}
-	| INT MAIN '(' ')' '{' LdeclBlock START END '}'		{exit(0);}
+MainBlock :  MainHeader '{' LdeclBlock START Slist END'}'	{
+									if(gst == NULL){
+										fp = startCodeGen();	
+										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
+									}
+									funcCodeGen($5, fp,-1);}
+	| MainHeader '{' LdeclBlock START END '}'		{exit(0);}
+	;
+	
+MainHeader : INT MAIN '(' ')'	{lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));}
 	;
 	
 
 	
-LdeclBlock : DECL LdeclList ENDDECL 	{
-						lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
-						generateLocalSymbolTable(lst,$2,noType);
-					}
+LdeclBlock : DECL LdeclList ENDDECL 	{localMemLoc = 0; addLocalVarToLST(lst,$2,noType);}
 	| DECL ENDDECL			{$$ = NULL;}
 	|				{$$ = NULL;}
 	;
@@ -178,6 +187,9 @@ Stmt:	InputStmt							{$$ = $1;}
 	| LoopStmt							{$$ = $1;}
 	| BREAK ENDSTMT						{$$ = makeJumpNode(break_node);}
 	| CONTINUE ENDSTMT						{$$ = makeJumpNode(continue_node);}
+	| ID '(' ')' ENDSTMT						{$$ = makeFuncNode($<string>1,gst,NULL);}
+	| ID '(' ArgList ')' ENDSTMT					{$$ = makeFuncNode($<string>1,gst,$3);}
+	| RETURN expr ENDSTMT						{$$ = makeReturnNode($2);}
 	;
 	
 IfStmt : IF '(' expr ')' THEN Slist ELSE Slist ENDIF	ENDSTMT	{$$ = makeIfElseBlock($3,$6,$8);}
@@ -213,9 +225,9 @@ expr : expr PLUS expr		{$$ = makeOperatorNode(add,$1,$3);}
 	 | '(' expr ')'	{$$ = $2;}
 	 | NUM			{$$ = makeNumNode($<number>1);}
 	 | STRING		{$$ = makeStringNode($<string>1);}
-	 | Identifier		{$$ = $1;}
 	 | ID '(' ')'		{$$ = makeFuncNode($<string>1,gst,NULL);}
 	 | ID '(' ArgList ')'	{$$ = makeFuncNode($<string>1,gst,$3);}
+	 | Identifier		{$$ = $1;}
 	 ;
 	 
 ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3));}
@@ -236,21 +248,18 @@ void yyerror(char const *s)
     exit(0);
 }
 
-void MainFunc(struct tnode* t){ 	
-//  	FILE *fp = fopen("output/output.out","w");
-//  	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
-//	fprintf(fp,"MOV SP, %d\n",memLoc);
-//	
-//	struct LoopStack* lp = (struct LoopStack*)malloc(sizeof(struct LoopStack));
-//	lp -> top = NULL;
-//	
-//	codeGen(t,fp,lp);
-//	
-//	lib_code_gen(end,0,fp);
-//	fclose(fp);	
-	exit(0);
+FILE* startCodeGen(){
+	FILE *fp = fopen("output/output.out","w");
+	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
+	fprintf(fp, "CALL MAIN\n");
+	fprintf(fp,"CALL EXIT\n");
+	return fp;
 }
 
+void endCodeGen(FILE *fp){
+	lib_code_gen(end,0,fp);
+	fclose(fp);
+}
 
 int main(int argc, char* argv[]) {
 	

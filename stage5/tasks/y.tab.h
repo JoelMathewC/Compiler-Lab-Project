@@ -85,7 +85,8 @@ extern int yydebug;
     REPEAT = 291,
     UNTIL = 292,
     BREAK = 293,
-    CONTINUE = 294
+    CONTINUE = 294,
+    RETURN = 295
   };
 #endif
 /* Tokens.  */
@@ -126,12 +127,13 @@ extern int yydebug;
 #define UNTIL 292
 #define BREAK 293
 #define CONTINUE 294
+#define RETURN 295
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 42 "code.y"
+#line 44 "code.y"
 
 	struct tnode *no;
 	struct dnode *dno;
@@ -141,7 +143,7 @@ union YYSTYPE
 	char* string;
 	
 
-#line 145 "y.tab.h"
+#line 147 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

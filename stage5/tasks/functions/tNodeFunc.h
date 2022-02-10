@@ -39,6 +39,8 @@ struct tnode* makeDoWhileBlock(struct tnode* cond, struct tnode* body);
 
 struct tnode* makeJumpNode(node_type nodetype);
 
+struct tnode* makeReturnNode(struct tnode* t);
+
 boolean isSymbolPtr(struct Gsymbol* g);
 
 boolean isValPtr(struct tnode* g);

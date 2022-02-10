@@ -1,12 +1,8 @@
 decl
-int a;
 int func(int a);
 enddecl
 
 int func(int a){
-decl
-int b;
-enddecl
 begin
 write(a);
 end
@@ -16,9 +12,10 @@ end
 
 int main(){
 decl
-	int c,d;
+	int c,d,e;
 enddecl
 begin
 	read(c);
+	func(c);
 end
 }

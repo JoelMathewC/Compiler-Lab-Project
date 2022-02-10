@@ -31,7 +31,7 @@ struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
 	return NULL;
 	
 }
-void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2], struct ParamStruct* params){
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2], struct ParamStruct* params, int nodetype){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
 	switch(type){
@@ -67,8 +67,11 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim,
 	else if(shape[1] <= 0) mem = shape[0];
 	else mem = shape[0] * shape[1];
 	
-	
-	elem -> binding = (dim == -1) ? -1 : getMemLoc(mem);
+	if(nodetype == func_node)
+		elem -> binding = getFuncLabel();
+	else
+		elem -> binding = (dim == -1) ? -1 : getMemLoc(mem);
+		
 	elem -> next = NULL;
 	
 	struct Gsymbol* temp = gst -> head;
@@ -91,27 +94,28 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim,
 }
 
 
-void LocalInstall(struct LSymbolTable* lst, char* name, datatype type){
+void LocalInstall(struct LSymbolTable* lst, char* name, datatype type, int paramLoc){
 	struct Lsymbol* elem = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
-
 
 	elem -> name = name;
 	elem -> dtype = type;
 	
-	elem -> binding = getMemLoc(1);
+	if(paramLoc == 0) //local var
+		elem -> binding = getLocalMemLoc();
+	else
+		elem -> binding = paramLoc;
+			
 	elem -> next = NULL;
 	
 	struct Lsymbol* temp = lst -> head;
-	if(lst -> head == NULL)
+	if(temp == NULL)
 		lst -> head = elem;
 	else{
-		while(temp != NULL){
+		while(temp -> next != NULL){
 			if(strcmp(temp -> name,name) == 0){ //if the identifier has already been used
 				printf("Error: Repeated use of identifier %s",name);
 				exit(0);
 			}
-			if(temp -> next == NULL)
-				break;
 			temp = temp -> next;
 		}
 		
@@ -133,32 +137,32 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, dat
 		case intType: generateGlobalSymbolTable(gst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,NULL);
+		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,NULL,leaf_node);
 				break;
 				
-		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,root -> params);
+		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,root -> params,func_node);
 				break;
 	}
 	
 }
 
 
-void generateLocalSymbolTable(struct LSymbolTable* lst, struct dnode* root, datatype dtype){
+void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, datatype dtype){
 	if(root == NULL)
 		return;
 	
 	switch(root -> nodetype){
-		case connector: generateLocalSymbolTable(lst,root -> left,dtype);
-				generateLocalSymbolTable(lst,root -> right,dtype);
+		case connector: addLocalVarToLST(lst,root -> left,dtype);
+				addLocalVarToLST(lst,root -> right,dtype);
 				break;
 		case stringType:
-		case intType: generateLocalSymbolTable(lst, root -> left, root -> nodetype);
+		case intType: 	addLocalVarToLST(lst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: LocalInstall(lst,root -> varname, dtype);
+		case leaf_node: LocalInstall(lst,root -> varname, dtype,0);
 				break;
 				
-		case func_node: LocalInstall(lst,root -> varname, dtype);
+		case func_node: LocalInstall(lst,root -> varname, dtype,0);
 				break;
 	}
 	
@@ -166,10 +170,13 @@ void generateLocalSymbolTable(struct LSymbolTable* lst, struct dnode* root, data
 
 void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	struct ParamStruct* temp_p = pt;
+	int len = -3;
 	while(temp_p != NULL){
-		LocalInstall(lst,temp_p -> name, temp_p -> dtype);
+		LocalInstall(lst,temp_p -> name, temp_p -> dtype,len);
 		temp_p = temp_p -> next;
+		--len;
 	}
+	
 }
 
 void verifyFuncHead(struct GSymbolTable* gst, char* name, datatype dtype, struct ParamStruct* params){

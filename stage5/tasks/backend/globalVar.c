@@ -10,6 +10,10 @@ int getLabel(){
 	return ++label_num;
 }
 
+int getFuncLabel(){
+	return ++func_label_num;
+}
+
 void freeReg(){
 	if(reg_num == 0){
 		printf("Error: Freeing unacquired register\n");
@@ -24,3 +28,6 @@ int getMemLoc(int amount){
 	return start;
 }
 
+int getLocalMemLoc(){
+	return ++localMemLoc;
+}

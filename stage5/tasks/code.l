@@ -37,6 +37,7 @@ read		{return READ;}
 write		{return WRITE;}
 break		{return BREAK;}
 continue	{return CONTINUE;}
+return		{return RETURN;}
 repeat		{return REPEAT;}
 until		{return UNTIL;}
 {identifier}	{yylval.string = strdup(yytext); return ID;}

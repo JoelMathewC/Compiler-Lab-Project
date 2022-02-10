@@ -23,6 +23,7 @@ typedef  int node_type;
 #define do_while 23
 #define break_node 24
 #define continue_node 25
+#define return_node 26
 #define end 100
 
 //datatype

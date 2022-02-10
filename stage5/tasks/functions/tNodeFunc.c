@@ -54,7 +54,6 @@ struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable*
 	
 	//if entry does not exist in symbol table
 	if(temp_g == NULL && temp_l == NULL){
-		printf("Heree: %s",c);
 		yyerror("Undefined Variable Referenced\n");
 		exit(0);
 	}
@@ -106,7 +105,7 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, NULL, NULL, temp_g -> dtype, leaf_node, temp_g, NULL, args, NULL, NULL);
+	return createTree(emp_data, c, NULL, NULL, temp_g -> dtype, func_node, temp_g, NULL, args, NULL, NULL);
 }
 
 
@@ -231,6 +230,11 @@ struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 struct tnode* makeJumpNode(node_type nodetype){
 	union Data emp_data;
 	return createTree(emp_data, NULL,NULL,NULL,noType, nodetype,NULL, NULL,NULL, NULL,NULL);
+}
+
+struct tnode* makeReturnNode(struct tnode* t){
+	union Data emp_data;
+	return createTree(emp_data, NULL,NULL,NULL,noType,return_node,NULL, NULL,NULL, t,NULL);
 }
 
 struct tnode* makeIfElseBlock(struct tnode* cond, struct tnode* then_node, struct tnode* else_node){// left child is condition, right child is connector (left: if, right: else)
