@@ -105,7 +105,7 @@
 	
 	struct GSymbolTable* gst;
 	struct LSymbolTable* lst;
-	FILE* startCodeGen();
+	FILE* startCodeGen(int memLoc);
 	void endCodeGen(FILE *fp);
 	FILE *fp;
 
@@ -630,15 +630,15 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    79,    79,    80,    81,    84,    90,    93,    94,    97,
-      98,   101,   104,   105,   108,   109,   110,   111,   112,   115,
-     116,   119,   126,   134,   135,   136,   139,   142,   148,   151,
-     156,   157,   158,   161,   162,   165,   168,   169,   173,   179,
-     180,   183,   184,   185,   186,   187,   188,   189,   190,   191,
-     192,   195,   196,   199,   200,   201,   204,   207,   210,   211,
-     214,   215,   216,   217,   218,   219,   220,   221,   222,   223,
-     224,   225,   226,   227,   228,   229,   230,   233,   234,   237,
-     238,   239,   240
+       0,    79,    79,    80,    81,    84,    89,    92,    93,    96,
+      97,   100,   103,   104,   107,   108,   109,   110,   111,   114,
+     115,   118,   125,   133,   134,   135,   138,   141,   147,   150,
+     155,   156,   157,   160,   161,   164,   167,   168,   172,   178,
+     179,   182,   183,   184,   185,   186,   187,   188,   189,   190,
+     191,   194,   195,   198,   199,   200,   203,   206,   209,   210,
+     213,   214,   215,   216,   217,   218,   219,   220,   221,   222,
+     223,   224,   225,   226,   227,   228,   229,   232,   233,   236,
+     237,   238,   239
 };
 #endif
 
@@ -1631,490 +1631,489 @@ yyreduce:
                                         {
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,(yyvsp[-1].dno),noType);
-						fp = startCodeGen();	
-						fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space	
+						fp = startCodeGen(memLoc);		
 					}
-#line 1638 "y.tab.c"
+#line 1637 "y.tab.c"
     break;
 
   case 6:
-#line 90 "code.y"
+#line 89 "code.y"
                                         {gst = NULL;}
-#line 1644 "y.tab.c"
+#line 1643 "y.tab.c"
     break;
 
   case 7:
-#line 93 "code.y"
+#line 92 "code.y"
                                         {(yyval.dno) = makeDConnectorNode((yyvsp[-1].dno),(yyvsp[0].dno));}
-#line 1650 "y.tab.c"
+#line 1649 "y.tab.c"
     break;
 
   case 8:
-#line 94 "code.y"
+#line 93 "code.y"
                                 {(yyval.dno) = (yyvsp[0].dno);}
-#line 1656 "y.tab.c"
+#line 1655 "y.tab.c"
     break;
 
   case 9:
-#line 97 "code.y"
+#line 96 "code.y"
                                         {(yyval.number) = (yyvsp[0].number);}
-#line 1662 "y.tab.c"
+#line 1661 "y.tab.c"
     break;
 
   case 10:
-#line 98 "code.y"
+#line 97 "code.y"
                                         {(yyval.number) = (yyvsp[0].number);}
-#line 1668 "y.tab.c"
+#line 1667 "y.tab.c"
     break;
 
   case 11:
-#line 101 "code.y"
+#line 100 "code.y"
                                         {(yyval.dno) = makeDatatypeNode((yyvsp[-2].number),(yyvsp[-1].dno));}
-#line 1674 "y.tab.c"
+#line 1673 "y.tab.c"
     break;
 
   case 12:
-#line 104 "code.y"
+#line 103 "code.y"
                                         {(yyval.dno) = makeDConnectorNode((yyvsp[-2].dno),(yyvsp[0].dno));}
-#line 1680 "y.tab.c"
+#line 1679 "y.tab.c"
     break;
 
   case 13:
-#line 105 "code.y"
+#line 104 "code.y"
                                         {(yyval.dno) = (yyvsp[0].dno);}
-#line 1686 "y.tab.c"
+#line 1685 "y.tab.c"
     break;
 
   case 14:
-#line 108 "code.y"
+#line 107 "code.y"
                                                         {(yyval.dno) = declIdNode((yyvsp[0].string),0,0,0);}
-#line 1692 "y.tab.c"
+#line 1691 "y.tab.c"
     break;
 
   case 15:
-#line 109 "code.y"
+#line 108 "code.y"
                                                         {(yyval.dno) = declIdNode((yyvsp[-3].string),(yyvsp[-1].number),0,1);}
-#line 1698 "y.tab.c"
+#line 1697 "y.tab.c"
     break;
 
   case 16:
-#line 110 "code.y"
+#line 109 "code.y"
                                                         {(yyval.dno) = declIdNode((yyvsp[-6].string),(yyvsp[-4].number),(yyvsp[-1].number),2);}
-#line 1704 "y.tab.c"
+#line 1703 "y.tab.c"
     break;
 
   case 17:
-#line 111 "code.y"
+#line 110 "code.y"
                                                         {(yyval.dno) = declIdNode((yyvsp[0].string),0,0,-1);}
-#line 1710 "y.tab.c"
+#line 1709 "y.tab.c"
     break;
 
   case 18:
-#line 112 "code.y"
+#line 111 "code.y"
                                                         {(yyval.dno) = declFuncNode((yyvsp[-3].string),(yyvsp[-1].pt));}
-#line 1716 "y.tab.c"
+#line 1715 "y.tab.c"
     break;
 
   case 19:
-#line 115 "code.y"
+#line 114 "code.y"
                                                         {}
-#line 1722 "y.tab.c"
+#line 1721 "y.tab.c"
     break;
 
   case 20:
-#line 116 "code.y"
+#line 115 "code.y"
                                                         {}
-#line 1728 "y.tab.c"
+#line 1727 "y.tab.c"
     break;
 
   case 21:
-#line 119 "code.y"
+#line 118 "code.y"
                                                         {
 									struct Gsymbol* g = GlobalLookup(gst,(yyvsp[-6].string));
 									funcCodeGen((yyvsp[-2].no), fp,g -> binding);
 									lst = NULL;
 								}
-#line 1738 "y.tab.c"
+#line 1737 "y.tab.c"
     break;
 
   case 22:
-#line 126 "code.y"
+#line 125 "code.y"
                                                         {
 								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
 								verifyFuncHead(gst,(yyvsp[-3].string),(yyvsp[-4].number),(yyvsp[-1].pt));
 								addParamToLST(lst,(yyvsp[-1].pt));
 								(yyval.string) = (yyvsp[-3].string);
 							}
-#line 1749 "y.tab.c"
+#line 1748 "y.tab.c"
     break;
 
   case 23:
-#line 134 "code.y"
+#line 133 "code.y"
                                                 {(yyval.pt) = addParameter((yyvsp[-2].pt),(yyvsp[0].pt));}
-#line 1755 "y.tab.c"
+#line 1754 "y.tab.c"
     break;
 
   case 24:
-#line 135 "code.y"
+#line 134 "code.y"
                                                 {(yyval.pt) = (yyvsp[0].pt);}
-#line 1761 "y.tab.c"
+#line 1760 "y.tab.c"
     break;
 
   case 25:
-#line 136 "code.y"
+#line 135 "code.y"
                                                         {(yyval.pt) = NULL;}
-#line 1767 "y.tab.c"
+#line 1766 "y.tab.c"
     break;
 
   case 26:
-#line 139 "code.y"
+#line 138 "code.y"
                                                 {(yyval.pt) = makeParamStruct((yyvsp[0].string),(yyvsp[-1].number));}
-#line 1773 "y.tab.c"
+#line 1772 "y.tab.c"
     break;
 
   case 27:
-#line 142 "code.y"
+#line 141 "code.y"
                                                                 {
 									if(gst == NULL){
-										fp = startCodeGen();	
+										fp = startCodeGen(-1);	
 										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 									}
 									funcCodeGen((yyvsp[-2].no), fp,-1);}
-#line 1784 "y.tab.c"
+#line 1783 "y.tab.c"
     break;
 
   case 28:
-#line 148 "code.y"
+#line 147 "code.y"
                                                                 {exit(0);}
-#line 1790 "y.tab.c"
+#line 1789 "y.tab.c"
     break;
 
   case 29:
-#line 151 "code.y"
+#line 150 "code.y"
                                 {lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));}
-#line 1796 "y.tab.c"
+#line 1795 "y.tab.c"
     break;
 
   case 30:
-#line 156 "code.y"
+#line 155 "code.y"
                                         {localMemLoc = 0; addLocalVarToLST(lst,(yyvsp[-1].dno),noType);}
-#line 1802 "y.tab.c"
+#line 1801 "y.tab.c"
     break;
 
   case 31:
-#line 157 "code.y"
+#line 156 "code.y"
                                         {(yyval.dno) = NULL;}
-#line 1808 "y.tab.c"
+#line 1807 "y.tab.c"
     break;
 
   case 32:
-#line 158 "code.y"
+#line 157 "code.y"
                                         {(yyval.dno) = NULL;}
-#line 1814 "y.tab.c"
+#line 1813 "y.tab.c"
     break;
 
   case 33:
-#line 161 "code.y"
+#line 160 "code.y"
                                                 {(yyval.dno) = makeDConnectorNode((yyvsp[-1].dno),(yyvsp[0].dno));}
-#line 1820 "y.tab.c"
+#line 1819 "y.tab.c"
     break;
 
   case 34:
-#line 162 "code.y"
+#line 161 "code.y"
                                         {(yyval.dno) = (yyvsp[0].dno);}
-#line 1826 "y.tab.c"
+#line 1825 "y.tab.c"
     break;
 
   case 35:
-#line 165 "code.y"
+#line 164 "code.y"
                                         {(yyval.dno) = makeDatatypeNode((yyvsp[-2].number),(yyvsp[-1].dno));}
-#line 1832 "y.tab.c"
+#line 1831 "y.tab.c"
     break;
 
   case 36:
-#line 168 "code.y"
+#line 167 "code.y"
                                         {(yyval.dno) = makeDConnectorNode((yyvsp[-2].dno),(yyvsp[0].dno));}
-#line 1838 "y.tab.c"
+#line 1837 "y.tab.c"
     break;
 
   case 37:
-#line 169 "code.y"
+#line 168 "code.y"
                                         {(yyval.dno) = (yyvsp[0].dno);}
-#line 1844 "y.tab.c"
+#line 1843 "y.tab.c"
     break;
 
   case 38:
-#line 173 "code.y"
+#line 172 "code.y"
                                                         {(yyval.dno) = declIdNode((yyvsp[0].string),0,0,0);}
-#line 1850 "y.tab.c"
+#line 1849 "y.tab.c"
     break;
 
   case 39:
-#line 179 "code.y"
+#line 178 "code.y"
                                                                         {(yyval.no) = makeConnectorNode((yyvsp[-1].no),(yyvsp[0].no));}
-#line 1856 "y.tab.c"
+#line 1855 "y.tab.c"
     break;
 
   case 40:
-#line 180 "code.y"
+#line 179 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1862 "y.tab.c"
+#line 1861 "y.tab.c"
     break;
 
   case 41:
-#line 183 "code.y"
+#line 182 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1868 "y.tab.c"
+#line 1867 "y.tab.c"
     break;
 
   case 42:
-#line 184 "code.y"
+#line 183 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1874 "y.tab.c"
+#line 1873 "y.tab.c"
     break;
 
   case 43:
-#line 185 "code.y"
+#line 184 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1880 "y.tab.c"
+#line 1879 "y.tab.c"
     break;
 
   case 44:
-#line 186 "code.y"
+#line 185 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1886 "y.tab.c"
+#line 1885 "y.tab.c"
     break;
 
   case 45:
-#line 187 "code.y"
+#line 186 "code.y"
                                                                         {(yyval.no) = (yyvsp[0].no);}
-#line 1892 "y.tab.c"
+#line 1891 "y.tab.c"
     break;
 
   case 46:
-#line 188 "code.y"
+#line 187 "code.y"
                                                                 {(yyval.no) = makeJumpNode(break_node);}
-#line 1898 "y.tab.c"
+#line 1897 "y.tab.c"
     break;
 
   case 47:
-#line 189 "code.y"
+#line 188 "code.y"
                                                                         {(yyval.no) = makeJumpNode(continue_node);}
-#line 1904 "y.tab.c"
+#line 1903 "y.tab.c"
     break;
 
   case 48:
-#line 190 "code.y"
+#line 189 "code.y"
                                                                         {(yyval.no) = makeFuncNode((yyvsp[-3].string),gst,NULL);}
-#line 1910 "y.tab.c"
+#line 1909 "y.tab.c"
     break;
 
   case 49:
-#line 191 "code.y"
+#line 190 "code.y"
                                                                         {(yyval.no) = makeFuncNode((yyvsp[-4].string),gst,(yyvsp[-2].at));}
-#line 1916 "y.tab.c"
+#line 1915 "y.tab.c"
     break;
 
   case 50:
-#line 192 "code.y"
+#line 191 "code.y"
                                                                         {(yyval.no) = makeReturnNode((yyvsp[-1].no));}
-#line 1922 "y.tab.c"
+#line 1921 "y.tab.c"
     break;
 
   case 51:
-#line 195 "code.y"
+#line 194 "code.y"
                                                                 {(yyval.no) = makeIfElseBlock((yyvsp[-7].no),(yyvsp[-4].no),(yyvsp[-2].no));}
-#line 1928 "y.tab.c"
+#line 1927 "y.tab.c"
     break;
 
   case 52:
-#line 196 "code.y"
+#line 195 "code.y"
                                                                         {(yyval.no) = makeIfElseBlock((yyvsp[-5].no),(yyvsp[-2].no),NULL);}
-#line 1934 "y.tab.c"
+#line 1933 "y.tab.c"
     break;
 
   case 53:
-#line 199 "code.y"
+#line 198 "code.y"
                                                                 {(yyval.no) = makeWhileBlock((yyvsp[-5].no),(yyvsp[-2].no));}
-#line 1940 "y.tab.c"
+#line 1939 "y.tab.c"
     break;
 
   case 54:
-#line 200 "code.y"
+#line 199 "code.y"
                                                                         {(yyval.no) = makeDoWhileBlock((yyvsp[-2].no),(yyvsp[-5].no));}
-#line 1946 "y.tab.c"
+#line 1945 "y.tab.c"
     break;
 
   case 55:
-#line 201 "code.y"
+#line 200 "code.y"
                                                                         {(yyval.no) = makeDoWhileBlock((yyvsp[-2].no),(yyvsp[-5].no));}
-#line 1952 "y.tab.c"
+#line 1951 "y.tab.c"
     break;
 
   case 56:
-#line 204 "code.y"
+#line 203 "code.y"
                                                                         {(yyval.no) = makeReadNode((yyvsp[-2].no));}
-#line 1958 "y.tab.c"
+#line 1957 "y.tab.c"
     break;
 
   case 57:
-#line 207 "code.y"
+#line 206 "code.y"
                                                                 {(yyval.no) = makeWriteNode((yyvsp[-2].no));}
-#line 1964 "y.tab.c"
+#line 1963 "y.tab.c"
     break;
 
   case 58:
-#line 210 "code.y"
+#line 209 "code.y"
                                                                         {(yyval.no) = makeOperatorNode(assign,(yyvsp[-3].no),(yyvsp[-1].no));}
-#line 1970 "y.tab.c"
+#line 1969 "y.tab.c"
     break;
 
   case 59:
-#line 211 "code.y"
+#line 210 "code.y"
                                                                         {(yyval.no) = makePtrIdNode((yyvsp[-4].no), gst, (yyvsp[-1].no));}
-#line 1976 "y.tab.c"
+#line 1975 "y.tab.c"
     break;
 
   case 60:
-#line 214 "code.y"
+#line 213 "code.y"
                                 {(yyval.no) = makeOperatorNode(add,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1982 "y.tab.c"
+#line 1981 "y.tab.c"
     break;
 
   case 61:
-#line 215 "code.y"
+#line 214 "code.y"
                                 {(yyval.no) = makeOperatorNode(sub,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1988 "y.tab.c"
+#line 1987 "y.tab.c"
     break;
 
   case 62:
-#line 216 "code.y"
+#line 215 "code.y"
                                 {(yyval.no) = makeOperatorNode(mul,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 1994 "y.tab.c"
+#line 1993 "y.tab.c"
     break;
 
   case 63:
-#line 217 "code.y"
+#line 216 "code.y"
                                 {(yyval.no) = makeOperatorNode(div,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2000 "y.tab.c"
+#line 1999 "y.tab.c"
     break;
 
   case 64:
-#line 218 "code.y"
+#line 217 "code.y"
                                 {(yyval.no) = makeOperatorNode(mod,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2006 "y.tab.c"
+#line 2005 "y.tab.c"
     break;
 
   case 65:
-#line 219 "code.y"
+#line 218 "code.y"
                         {(yyval.no) = makeOperatorNode(gt,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2012 "y.tab.c"
+#line 2011 "y.tab.c"
     break;
 
   case 66:
-#line 220 "code.y"
+#line 219 "code.y"
                                 {(yyval.no) = makeOperatorNode(gte,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2018 "y.tab.c"
+#line 2017 "y.tab.c"
     break;
 
   case 67:
-#line 221 "code.y"
+#line 220 "code.y"
                         {(yyval.no) = makeOperatorNode(lt,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2024 "y.tab.c"
+#line 2023 "y.tab.c"
     break;
 
   case 68:
-#line 222 "code.y"
+#line 221 "code.y"
                                 {(yyval.no) = makeOperatorNode(lte,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2030 "y.tab.c"
+#line 2029 "y.tab.c"
     break;
 
   case 69:
-#line 223 "code.y"
+#line 222 "code.y"
                         {(yyval.no) = makeOperatorNode(eq,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2036 "y.tab.c"
+#line 2035 "y.tab.c"
     break;
 
   case 70:
-#line 224 "code.y"
+#line 223 "code.y"
                                 {(yyval.no) = makeOperatorNode(neq,(yyvsp[-2].no),(yyvsp[0].no));}
-#line 2042 "y.tab.c"
+#line 2041 "y.tab.c"
     break;
 
   case 71:
-#line 225 "code.y"
+#line 224 "code.y"
                         {(yyval.no) = (yyvsp[-1].no);}
-#line 2048 "y.tab.c"
+#line 2047 "y.tab.c"
     break;
 
   case 72:
-#line 226 "code.y"
+#line 225 "code.y"
                                 {(yyval.no) = makeNumNode((yyvsp[0].number));}
-#line 2054 "y.tab.c"
+#line 2053 "y.tab.c"
     break;
 
   case 73:
-#line 227 "code.y"
+#line 226 "code.y"
                                 {(yyval.no) = makeStringNode((yyvsp[0].string));}
-#line 2060 "y.tab.c"
+#line 2059 "y.tab.c"
     break;
 
   case 74:
-#line 228 "code.y"
+#line 227 "code.y"
                                 {(yyval.no) = makeFuncNode((yyvsp[-2].string),gst,NULL);}
-#line 2066 "y.tab.c"
+#line 2065 "y.tab.c"
     break;
 
   case 75:
-#line 229 "code.y"
+#line 228 "code.y"
                                 {(yyval.no) = makeFuncNode((yyvsp[-3].string),gst,(yyvsp[-1].at));}
-#line 2072 "y.tab.c"
+#line 2071 "y.tab.c"
     break;
 
   case 76:
-#line 230 "code.y"
+#line 229 "code.y"
                                 {(yyval.no) = (yyvsp[0].no);}
-#line 2078 "y.tab.c"
+#line 2077 "y.tab.c"
     break;
 
   case 77:
-#line 233 "code.y"
+#line 232 "code.y"
                                         {(yyval.at) = addArguments((yyvsp[-2].at),makeArgStruct((yyvsp[0].no)));}
-#line 2084 "y.tab.c"
+#line 2083 "y.tab.c"
     break;
 
   case 78:
-#line 234 "code.y"
+#line 233 "code.y"
                                         {(yyval.at) = makeArgStruct((yyvsp[0].no));}
-#line 2090 "y.tab.c"
+#line 2089 "y.tab.c"
     break;
 
   case 79:
-#line 237 "code.y"
+#line 236 "code.y"
                                         {(yyval.no) = makeIdNode((yyvsp[0].string),gst,lst,NULL,NULL);}
-#line 2096 "y.tab.c"
+#line 2095 "y.tab.c"
     break;
 
   case 80:
-#line 238 "code.y"
+#line 237 "code.y"
                                                 {(yyval.no) = makeIdNode((yyvsp[-3].string),gst,lst,(yyvsp[-1].no),NULL);}
-#line 2102 "y.tab.c"
+#line 2101 "y.tab.c"
     break;
 
   case 81:
-#line 239 "code.y"
+#line 238 "code.y"
                                         {(yyval.no) = makeIdNode((yyvsp[-6].string),gst,lst,(yyvsp[-4].no),(yyvsp[-1].no));}
-#line 2108 "y.tab.c"
+#line 2107 "y.tab.c"
     break;
 
   case 82:
-#line 240 "code.y"
+#line 239 "code.y"
                                                 {(yyval.no) = makeIdNode((yyvsp[0].string),gst,lst,makeNumNode(0),NULL);}
-#line 2114 "y.tab.c"
+#line 2113 "y.tab.c"
     break;
 
 
-#line 2118 "y.tab.c"
+#line 2117 "y.tab.c"
 
       default: break;
     }
@@ -2346,7 +2345,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 243 "code.y"
+#line 242 "code.y"
 
 
 void yyerror(char const *s)
@@ -2355,9 +2354,10 @@ void yyerror(char const *s)
     exit(0);
 }
 
-FILE* startCodeGen(){
+FILE* startCodeGen(int memLoc){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
+	fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;

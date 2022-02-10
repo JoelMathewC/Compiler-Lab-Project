@@ -36,7 +36,7 @@
 	
 	struct GSymbolTable* gst;
 	struct LSymbolTable* lst;
-	FILE* startCodeGen();
+	FILE* startCodeGen(int memLoc);
 	void endCodeGen(FILE *fp);
 	FILE *fp;
 %}
@@ -84,8 +84,7 @@ program : GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);
 GdeclBlock : DECL GdeclList ENDDECL 	{
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,$2,noType);
-						fp = startCodeGen();	
-						fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space	
+						fp = startCodeGen(memLoc);		
 					}
 	| DECL ENDDECL			{gst = NULL;}
 	;
@@ -141,7 +140,7 @@ Param : Type ID					{$$ = makeParamStruct($<string>2,$<number>1);}
 	 
 MainBlock :  MainHeader '{' LdeclBlock START Slist END'}'	{
 									if(gst == NULL){
-										fp = startCodeGen();	
+										fp = startCodeGen(-1);	
 										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 									}
 									funcCodeGen($5, fp,-1);}
@@ -248,9 +247,10 @@ void yyerror(char const *s)
     exit(0);
 }
 
-FILE* startCodeGen(){
+FILE* startCodeGen(int memLoc){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
+	fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;
