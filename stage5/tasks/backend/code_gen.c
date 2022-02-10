@@ -50,6 +50,10 @@ void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){
 		return;
 		
 	}
+	else if(t -> nodetype == func_node){
+		codeGen(t, fp, NULL);
+		fprintf(fp,"MOV R%d, R0\n",reg);
+	}
 	else{ //internal node
 		oper_code_gen(t->left,fp,reg);
 		
@@ -202,8 +206,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			break;
 		
 		//assignment (=)
-		case assign: 	
-				reg1 = getReg();
+		case assign: 	reg1 = getReg();
 				oper_code_gen(t->right,fp,reg1);
 				
 				reg2 = getReg();
@@ -296,7 +299,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			reg2 = getReg();
 			fprintf(fp,"MOV R%d, BP\n",reg2);
 			fprintf(fp,"SUB R%d, 2\n",reg2);
-			fprintf(fp,"MOV [%d], R%d\n",reg2,reg1);
+			fprintf(fp,"MOV [R%d], R%d\n",reg2,reg1);
 			freeReg();
 			freeReg();
 			break;
@@ -326,6 +329,7 @@ void funcCodeGen(struct tnode *t, FILE *fp, int label){
 		fprintf(fp,"MAIN:\n");
 	else
 		fprintf(fp,"F%d:\n",label);
+		
 	functionCalledStartCode(fp);
 	codeGen(t,fp,lp);
 	functionCalledEndCode(fp,label);
