@@ -5,12 +5,14 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype type, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype dtype, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct tnode *l, struct tnode *r);
 
 
 
 
 struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* index1, struct tnode* index2);
+
+struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* args);
 
 struct tnode* makeNumNode(int n);
 

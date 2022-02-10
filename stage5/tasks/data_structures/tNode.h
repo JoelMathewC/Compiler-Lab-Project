@@ -14,6 +14,7 @@ struct tnode {
 	node_type nodetype;  		// information about non-leaf nodes - read/write/connector/+/* etc. 
 	struct Gsymbol *Gentry; 	//pointer to entry in global symbol table
 	struct Lsymbol *Lentry;	//pointer to entry in local symbol table
+	struct ArgStruct *args;	//arguments for functions
 	struct tnode *left,*right;	//left and right branches   
 };
 

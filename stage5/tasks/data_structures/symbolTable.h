@@ -9,7 +9,7 @@ struct Gsymbol {
 	int* shape;
 	int binding;
 	int flabel; //label for identifying functions code
-	struct ParamStruct *param_list; //points to parameter list for functions
+	struct ParamStruct *params; //points to parameter list for functions
 	struct Gsymbol *next;
 };
 
@@ -24,9 +24,8 @@ struct Lsymbol {
 	struct Lsymbol *next;
 };
 
-union SymbolEntry{
-	struct Gsymbol* gst;
-	struct Lsymbol* lst;
-};
+
+
+
 
 

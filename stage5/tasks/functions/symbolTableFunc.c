@@ -31,7 +31,7 @@ struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
 	return NULL;
 	
 }
-void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2]){
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2], struct ParamStruct* params){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
 	switch(type){
@@ -60,6 +60,7 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim,
 	elem -> name = name;
 	elem -> dim = dim;
 	elem -> shape = shape;
+	elem -> params = params;
 	
 	int mem;
 	if(shape[0] <= 0) mem = 1;
@@ -104,7 +105,7 @@ void LocalInstall(struct LSymbolTable* lst, char* name, datatype type){
 	if(lst -> head == NULL)
 		lst -> head = elem;
 	else{
-		while(temp!= NULL){
+		while(temp != NULL){
 			if(strcmp(temp -> name,name) == 0){ //if the identifier has already been used
 				printf("Error: Repeated use of identifier %s",name);
 				exit(0);
@@ -132,10 +133,10 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, dat
 		case intType: generateGlobalSymbolTable(gst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape);
+		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,NULL);
 				break;
 				
-		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape);
+		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,root -> params);
 				break;
 	}
 	
@@ -161,6 +162,44 @@ void generateLocalSymbolTable(struct LSymbolTable* lst, struct dnode* root, data
 				break;
 	}
 	
+}
+
+void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
+	struct ParamStruct* temp_p = pt;
+	while(temp_p != NULL){
+		LocalInstall(lst,temp_p -> name, temp_p -> dtype);
+		temp_p = temp_p -> next;
+	}
+}
+
+void verifyFuncHead(struct GSymbolTable* gst, char* name, datatype dtype, struct ParamStruct* params){
+	struct Gsymbol* Gentry = GlobalLookup(gst,name);
+	
+	if(Gentry == NULL){
+		printf("Function not declared: %s",name);
+		exit(0);
+	}
+	
+	if(Gentry -> dtype != dtype){
+		printf("Function declared with different return types: %s",name);
+		exit(0);
+	}
+	
+	struct ParamStruct* gst_p = Gentry -> params;
+	struct ParamStruct* p = params;
+	while(gst_p != NULL && p != NULL){
+		if(gst_p -> dtype != p -> dtype){
+			printf("%d : %d\n",gst_p -> dtype,p -> dtype);
+			printf("Parameters inconsistent with declaration: %s", name);
+			exit(0);
+		}
+		gst_p = gst_p -> next;
+		p = p -> next;
+	}
+	if(gst_p != NULL || p != NULL){
+		printf("Parameters inconsistent with declaration: %s", name);
+		exit(0);
+	}
 }
 
 void printGlobalSymbolTable(struct GSymbolTable* gst){

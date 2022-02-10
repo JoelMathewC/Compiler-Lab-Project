@@ -3,7 +3,7 @@ struct Gsymbol* GlobalLookup(struct GSymbolTable* gst, char* name); // Returns a
 
 struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name);
 
-void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2]); // Creates a symbol table entry.
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2], struct ParamStruct* params); // Creates a symbol table entry.
 
 void LocalInstall(struct LSymbolTable* lst, char* name, datatype type); 
 

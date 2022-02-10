@@ -13,16 +13,19 @@
 	#include "data_structures/symbolTable.h"
 	#include "data_structures/tNode.h"
 	#include "data_structures/dNode.h"
+	#include "data_structures/paramStruct.h"
 	#include "backend/globalVar.h"
 	
 	#include "functions/dNodeFunc.h"
 	#include "functions/tNodeFunc.h"
+	#include "functions/paramStructFunc.h"
 	#include "functions/labelAddrTableFunc.h"
 	#include "functions/loopStackFunc.h"
 	#include "functions/symbolTableFunc.h"
 	
 	#include "functions/dNodeFunc.c"
 	#include "functions/tNodeFunc.c"
+	#include "functions/paramStructFunc.c"
 	#include "functions/labelAddrTableFunc.c"
 	#include "functions/loopStackFunc.c"
 	#include "functions/symbolTableFunc.c"
@@ -39,13 +42,17 @@
 %union{
 	struct tnode *no;
 	struct dnode *dno;
+	struct ParamStruct *pt;
+	struct ArgStruct *at;
 	int number;
 	char* string;
 	
 }
 
+%type <at> ArgList
+%type <pt> Param ParamList FName
 %type <no> program MainBlock FdefBlock Fdef 
-%type <dno> GdeclBlock GdeclList Gdecl GidList Gid ParamList Param LdeclBlock LdeclList Ldecl LidList Lid
+%type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid
 %type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier
 %type <number> Type
 
@@ -99,35 +106,37 @@ Gid : ID						{$$ = declIdNode($<string>1,0,0,0);}
 		| ID '[' NUM ']'			{$$ = declIdNode($<string>1,$<number>3,0,1);}
 		| ID '[' NUM ']' '[' NUM ']'		{$$ = declIdNode($<string>1,$<number>3,$<number>6,2);}
 		| STAR ID				{$$ = declIdNode($<string>2,0,0,-1);}
-		| ID '(' ParamList ')'			{$$ = declFuncNode($<string>1);}
+		| ID '(' ParamList ')'			{$$ = declFuncNode($<string>1,$3);}
 		;
 
 FdefBlock : FdefBlock Fdef				{}
 	| Fdef						{}
 	;
 
-Fdef : Type ID '(' ParamList ')' '{' LdeclBlock START Slist END '}'	{lst = NULL;}
+Fdef : FName '{' LdeclBlock START Slist END '}'		{
+										//lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
+										addParamToLST(lst,$1);
+										//generateLocalSymbolTable(lst,$3,noType);
+										//lst = NULL;
+								}
+	;
+	
+FName: Type ID '(' ParamList ')'				{
+									verifyFuncHead(gst,$<string>2,$<number>1,$4);
+									$$ = $4; //pass the param list
+								}
 	;
 
-ParamList : ParamList ',' Param			{$$ = makeDConnectorNode($1,$3);}
+ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
 	| Param					{$$ = $1;}
 	|						{$$ = NULL;}
 	;
 	
-Param : Type ID					{$$ = makeDatatypeNode($1,declIdNode($<string>2,0,0,0));}
+Param : Type ID					{$$ = makeParamStruct($<string>2,$<number>1);}
 	;
 	 
-MainBlock : INT MAIN '(' ')' '{' LdeclBlock START Slist END'}'	{ 	$$ = $8; 
-										lst = NULL;
-									}
-	| INT MAIN '(' ')' '{' LdeclBlock START END '}'		{ 
-							  			lst = NULL;
-							  			exit(0);
-							  		}
-	| INT MAIN '(' ')' '{' START END '}'				{ 
-					  					lst = NULL;
-					  					exit(0);
-					  				}
+MainBlock : INT MAIN '(' ')' '{' LdeclBlock START Slist END'}'	{}
+	| INT MAIN '(' ')' '{' LdeclBlock START END '}'		{exit(0);}
 	;
 	
 
@@ -135,9 +144,9 @@ MainBlock : INT MAIN '(' ')' '{' LdeclBlock START Slist END'}'	{ 	$$ = $8;
 LdeclBlock : DECL LdeclList ENDDECL 	{
 						lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
 						generateLocalSymbolTable(lst,$2,noType);
-						printLocalSymbolTable(lst);			
 					}
-	| DECL ENDDECL			{}
+	| DECL ENDDECL			{$$ = NULL;}
+	|				{$$ = NULL;}
 	;
 
 LdeclList : LdeclList Ldecl			{$$ = makeDConnectorNode($1,$2);}
@@ -205,12 +214,12 @@ expr : expr PLUS expr		{$$ = makeOperatorNode(add,$1,$3);}
 	 | NUM			{$$ = makeNumNode($<number>1);}
 	 | STRING		{$$ = makeStringNode($<string>1);}
 	 | Identifier		{$$ = $1;}
-	 | ID '(' ')'		{}
-	 | ID '(' ArgList ')'	{}
+	 | ID '(' ')'		{$$ = makeFuncNode($<string>1,gst,NULL);}
+	 | ID '(' ArgList ')'	{$$ = makeFuncNode($<string>1,gst,$3);}
 	 ;
 	 
-ArgList : ArgList ',' expr		{}
-	| expr				{}
+ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3));}
+	| expr				{$$ = makeArgStruct($1);}
 	;
 
 Identifier : ID				{$$ = makeIdNode($<string>1,gst,lst,NULL,NULL);}
