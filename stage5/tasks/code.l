@@ -40,6 +40,8 @@ continue	{return CONTINUE;}
 return		{return RETURN;}
 repeat		{return REPEAT;}
 until		{return UNTIL;}
+AND		{return AND;}
+OR		{return OR;}
 {identifier}	{yylval.string = strdup(yytext); return ID;}
 {numbers}	{yylval.number = atoi(yytext); return NUM;}
 {strings}	{yylval.string = strdup(yytext); return STRING;}

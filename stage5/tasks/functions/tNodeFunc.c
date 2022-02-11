@@ -195,6 +195,16 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 					exit(1);
 				}
 				break;
+		
+		case and:
+		case or:
+				if(l -> dtype == boolType && r -> dtype == boolType){
+					type = boolType;
+				}else{
+					printf("Error: Type Mismatch(op: %d)\n",op);
+					exit(1);
+				}
+				break;
 	}
 	
 	union Data emp_data;

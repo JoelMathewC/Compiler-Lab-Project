@@ -17,6 +17,8 @@ typedef  int node_type;
 #define lte 12
 #define eq 13
 #define neq 14
+#define and 15
+#define or 16
 #define if_node 20
 #define then_else_node 21
 #define while_node 22

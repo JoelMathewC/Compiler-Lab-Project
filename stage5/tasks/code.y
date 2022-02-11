@@ -61,13 +61,14 @@
 %token MAIN
 %token ID NUM STRING
 %token STR INT
-%token PLUS MINUS STAR DIV MOD ASSIGN GT GTE LT LTE EQ NEQ ADDR
+%token PLUS MINUS STAR DIV MOD ASSIGN GT GTE LT LTE EQ NEQ ADDR AND OR
 %token START END ENDSTMT DECL ENDDECL
 %token READ WRITE
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL
 %token BREAK CONTINUE RETURN
 
+%nonassoc AND OR
 %nonassoc GT GTE LT LTE EQ NEQ
 %left PLUS MINUS
 %left STAR DIV MOD
@@ -81,7 +82,7 @@ program : GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);
 	| MainBlock				{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
 	;
 	
-GdeclBlock : DECL GdeclList ENDDECL 	{
+GdeclBlock : DECL GdeclList ENDDECL 	{	
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,$2,noType);
 						fp = startCodeGen(memLoc);		
@@ -115,7 +116,7 @@ FdefBlock : FdefBlock Fdef				{}
 	| Fdef						{}
 	;
 
-Fdef : FName '{' LdeclBlock START Slist END '}'		{
+Fdef : FName '{' LdeclBlock START Slist END '}'		{	
 									struct Gsymbol* g = GlobalLookup(gst,$<string>1);
 									funcCodeGen($5, fp,g -> binding);
 									lst = NULL;
@@ -136,6 +137,7 @@ ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
 	;
 	
 Param : Type ID					{$$ = makeParamStruct($<string>2,$<number>1);}
+	| Type STAR ID					{$$ = makeParamStruct($<string>2,$<number>1 == intType ? intPtrType : strPtrType);}
 	;
 	 
 MainBlock :  MainHeader '{' LdeclBlock START Slist END'}'	{
@@ -221,6 +223,8 @@ expr : expr PLUS expr		{$$ = makeOperatorNode(add,$1,$3);}
 	 | expr LTE expr	{$$ = makeOperatorNode(lte,$1,$3);}
 	 | expr EQ expr	{$$ = makeOperatorNode(eq,$1,$3);}
 	 | expr NEQ expr	{$$ = makeOperatorNode(neq,$1,$3);}
+	 | expr AND expr	{$$ = makeOperatorNode(and,$1,$3);}
+	 | expr OR expr	{$$ = makeOperatorNode(or,$1,$3);}
 	 | '(' expr ')'	{$$ = $2;}
 	 | NUM			{$$ = makeNumNode($<number>1);}
 	 | STRING		{$$ = makeStringNode($<string>1);}
@@ -251,6 +255,7 @@ FILE* startCodeGen(int memLoc){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
 	fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
+	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;

@@ -68,25 +68,27 @@ extern int yydebug;
     EQ = 274,
     NEQ = 275,
     ADDR = 276,
-    START = 277,
-    END = 278,
-    ENDSTMT = 279,
-    DECL = 280,
-    ENDDECL = 281,
-    READ = 282,
-    WRITE = 283,
-    IF = 284,
-    THEN = 285,
-    ELSE = 286,
-    ENDIF = 287,
-    WHILE = 288,
-    DO = 289,
-    ENDWHILE = 290,
-    REPEAT = 291,
-    UNTIL = 292,
-    BREAK = 293,
-    CONTINUE = 294,
-    RETURN = 295
+    AND = 277,
+    OR = 278,
+    START = 279,
+    END = 280,
+    ENDSTMT = 281,
+    DECL = 282,
+    ENDDECL = 283,
+    READ = 284,
+    WRITE = 285,
+    IF = 286,
+    THEN = 287,
+    ELSE = 288,
+    ENDIF = 289,
+    WHILE = 290,
+    DO = 291,
+    ENDWHILE = 292,
+    REPEAT = 293,
+    UNTIL = 294,
+    BREAK = 295,
+    CONTINUE = 296,
+    RETURN = 297
   };
 #endif
 /* Tokens.  */
@@ -109,25 +111,27 @@ extern int yydebug;
 #define EQ 274
 #define NEQ 275
 #define ADDR 276
-#define START 277
-#define END 278
-#define ENDSTMT 279
-#define DECL 280
-#define ENDDECL 281
-#define READ 282
-#define WRITE 283
-#define IF 284
-#define THEN 285
-#define ELSE 286
-#define ENDIF 287
-#define WHILE 288
-#define DO 289
-#define ENDWHILE 290
-#define REPEAT 291
-#define UNTIL 292
-#define BREAK 293
-#define CONTINUE 294
-#define RETURN 295
+#define AND 277
+#define OR 278
+#define START 279
+#define END 280
+#define ENDSTMT 281
+#define DECL 282
+#define ENDDECL 283
+#define READ 284
+#define WRITE 285
+#define IF 286
+#define THEN 287
+#define ELSE 288
+#define ENDIF 289
+#define WHILE 290
+#define DO 291
+#define ENDWHILE 292
+#define REPEAT 293
+#define UNTIL 294
+#define BREAK 295
+#define CONTINUE 296
+#define RETURN 297
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -143,7 +147,7 @@ union YYSTYPE
 	char* string;
 	
 
-#line 147 "y.tab.h"
+#line 151 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

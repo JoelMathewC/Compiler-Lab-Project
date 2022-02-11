@@ -8,3 +8,7 @@ struct ArgStruct{
 	struct tnode* arg;
 	struct ArgStruct* next;
 };
+
+struct ArgStack{
+	struct ArgStruct* head;
+};

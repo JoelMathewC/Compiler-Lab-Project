@@ -43,3 +43,20 @@ struct ArgStruct* makeArgStruct(struct tnode* expr){
 	node -> next = NULL;
 	return node;
 }
+
+struct tnode* popArgStack(struct ArgStack* st){
+	struct tnode* temp = st -> head -> arg;
+	if(temp == NULL){
+		printf("Error: Nothing to pop\n");
+		exit(0);
+	}
+	st -> head = st -> head -> next;
+	return temp;
+}
+
+void pushArgStack(struct ArgStack* st, struct tnode* node){
+		struct ArgStruct* new_node = (struct ArgStruct*)malloc(sizeof(struct ArgStruct));
+		new_node -> arg = node;
+		new_node -> next = st -> head;
+		st -> head = new_node;
+}

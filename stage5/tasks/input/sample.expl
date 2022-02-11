@@ -4,8 +4,15 @@ int func(int a);
 enddecl
 
 int func(int a){
+decl
+int b;
+enddecl
 begin
-return a+2;
+if(a == 5)then
+ a = a + 2;
+ a = func(a);
+endif;
+return a;
 end
 }
 
@@ -20,5 +27,6 @@ begin
 	read(c);
 	c = func(c);
 	write(c);
+	return 0;
 end
 }

@@ -105,6 +105,8 @@ void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){
 			//not equal
 			case neq: fprintf(fp,"NE ");
 				break;
+			
+
 		}
 		
 	
@@ -219,14 +221,21 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		
 		//if
 		case if_node: 
-			reg1 = getReg();
-			oper_code_gen(t -> left,fp,reg1);
-			label1 = getLabel();
-			fprintf(fp,"JZ R%d, L%d\n",reg1,label1);
+			if(t -> left -> nodetype == and || t -> left -> nodetype == or){
+				label1 = getLabel();
+				codeGen(t -> left,fp,lp);
+			}
+			else{
+				reg1 = getReg();
+				oper_code_gen(t -> left,fp,reg1);
+				label1 = getLabel();
+				fprintf(fp,"JZ R%d, L%d\n",reg1,label1);
+				freeReg();
+			}
 			codeGen(t -> right -> left,fp,lp);
 			
 			if(t -> right -> right != NULL){ // else condition exists
-				label2 = getLabel();
+				label2 = getLabel(); 
 				fprintf(fp,"JMP L%d\n",label2);
 				fprintf(fp,"L%d:\n",label1);
 				codeGen(t -> right -> right,fp,lp);
@@ -234,7 +243,6 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			
 			label2 = label2 > label1 ? label2 : label1;
 			fprintf(fp,"L%d:\n",label2);
-			freeReg();
 			
 			break;
 		
@@ -307,7 +315,49 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		case func_node:
 			functionCallerCode(fp,t -> Gentry -> binding,t -> args);
 			break;
-			
+		
+		case and:	
+				if(t -> left -> nodetype == and || t -> left -> nodetype == or){
+					codeGen(t -> left,fp,lp);
+				}else{
+					reg1 = getReg();
+					oper_code_gen(t -> left,fp,reg1);
+					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num);
+					freeReg();
+				}
+				
+				if(t -> right -> nodetype == and || t -> right -> nodetype == or){
+					codeGen(t -> right,fp,lp);
+				}else{
+					reg1 = getReg();
+					oper_code_gen(t -> right,fp,reg1);
+					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num);
+					freeReg();
+				}
+			break;
+		
+		case or:
+				label1 = getLabel();
+				if(t -> left -> nodetype == and || t -> left -> nodetype == or){
+					codeGen(t -> left,fp,lp);
+				}else{
+					reg1 = getReg();
+					oper_code_gen(t -> left,fp,reg1);
+					fprintf(fp,"JNZ R%d, L%d\n",reg1,label1);
+					freeReg();
+				}
+				
+				if(t -> right -> nodetype == and || t -> right -> nodetype == or){
+					codeGen(t -> right,fp,lp);
+				}else{
+					reg1 = getReg();
+					oper_code_gen(t -> right,fp,reg1);
+					label2 = getLabel();
+					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num-1);
+					freeReg();
+				}
+				fprintf(fp,"L%d:\n",label1);
+			break;
 		default: 	
 				reg1 = getReg();
 				oper_code_gen(t,fp,reg1);
@@ -345,12 +395,23 @@ void functionCallerCode(FILE *fp, int label, struct ArgStruct *args){
 	//push args
 	int len = 0;
 	struct ArgStruct* temp = args;
+	struct ArgStack *st = (struct ArgStack*)malloc(sizeof(struct ArgStack));
+	st -> head = NULL;
+	
 	while(temp != NULL){
+		pushArgStack(st,temp -> arg);
+		temp = temp -> next;
+	}	
+	
+	while(st -> head != NULL){
 		reg1 = getReg();
-		oper_code_gen(temp -> arg,fp,reg1);
+		struct tnode* node = popArgStack(st);
+		oper_code_gen(node,fp,reg1);
+/*		if(temp -> arg -> dtype == intPtrType || temp -> arg -> dtype == strPtrType){*/
+/*			fprintf(fp,"MOV R%d, %d",reg1,temp -> arg -> binding);*/
+/*		}*/
 		fprintf(fp,"PUSH R%d\n",reg1);
 		freeReg();
-		temp = temp -> next;
 		++len;
 	}
 	
