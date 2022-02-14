@@ -1,0 +1,24 @@
+decl
+int func(int a, int *p);
+enddecl
+
+int func(int a, int *p){
+begin
+	*p = *p + a;
+end
+}
+
+int main(){
+decl
+	int a,b;
+	int *c;
+enddecl
+begin
+	read(a);
+	read(b);
+	c = &b;
+	func(a,c);
+	write(*c);
+	return 0;
+end
+}

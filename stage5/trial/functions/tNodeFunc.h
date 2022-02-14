@@ -5,20 +5,19 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype dtype, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, int dim, datatype dtype, node_type nodetype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct tnode *l, struct tnode *r);
 
-
-
-
-struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* index1, struct tnode* index2);
+struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct ArrayDims* indices);
 
 struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* args);
 
-struct tnode* makeNumNode(int n);
+struct tnode* makeNumNode(int n, int dim);
 
 struct tnode* makeStringNode(char* str);
 
-void makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* addr);
+struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct LSymbolTable* lst);
+
+struct tnode* makePtrNode(struct tnode* node);
 	
 
 struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r);
@@ -41,13 +40,9 @@ struct tnode* makeJumpNode(node_type nodetype);
 
 struct tnode* makeReturnNode(struct tnode* t);
 
-boolean isSymbolPtr(struct Gsymbol* g);
+struct ArrayDims* addArrayDim(struct ArrayDims* node, struct tnode* t);
 
-boolean isValPtr(struct tnode* g);
-
-/*boolean validateArr(struct tnode* node);*/
-
-/*boolean validateOper(struct tnode* node);*/
+int dimRes(int dim, struct ArrayDims* indices);
 
 
 

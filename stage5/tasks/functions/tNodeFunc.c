@@ -84,7 +84,7 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 	
 	//if entry does not exist in symbol table
 	if(temp_g == NULL){
-		yyerror("Undefined Variable Referenced\n");
+		yyerror("Undefined Variable Referenced (Func)\n");
 		exit(0);
 	}
 	
@@ -117,32 +117,60 @@ struct tnode* makeNumNode(int n){
 	return createTree(data,NULL, NULL, NULL,intType, leaf_node, NULL, NULL, NULL, NULL, NULL);
 }
 
-struct tnode* makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct tnode* addr){
-	struct Gsymbol* ptr_entry = GlobalLookup(gst,ptr -> varname);
-	struct Gsymbol* addr_entry = GlobalLookup(gst,addr -> varname);
+void makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* addr){
+
+	struct Lsymbol* ptr_entry_l = LocalLookup(lst,ptr -> varname);
+	struct Lsymbol* addr_entry_l = LocalLookup(lst,addr -> varname);
+	
+	struct Gsymbol* ptr_entry_g = GlobalLookup(gst,ptr -> varname);
+	struct Gsymbol* addr_entry_g = GlobalLookup(gst,addr -> varname);
 	union Data emp_data;
 	
 	//if entry does not exist in symbol table
-	if(ptr_entry == NULL || addr_entry == NULL){
-		yyerror("Undefined Variable Referenced\n");
+	if((ptr_entry_l == NULL && ptr_entry_g == NULL) || (addr_entry_l == NULL && addr_entry_g == NULL)){
+		yyerror("Undefined Variable Referenced (ptr)\n");
 		exit(0);
 	}
 	
-	if(isSymbolPtr(ptr_entry) == False || (addr_entry -> dtype != intType && addr_entry -> dtype != stringType)){
+	datatype ptr_dtype;
+	datatype addr_dtype;
+	int addr_binding;
+	int addr_dim;
+	int* addr_shape;
+	
+	ptr_dtype = ptr_entry_l != NULL ? ptr_entry_l -> dtype : ptr_entry_g -> dtype;
+	
+	if(addr_entry_l != NULL){
+		addr_binding = addr_entry_l -> binding;
+		addr_dtype = addr_entry_l -> dtype;
+	}else{
+		addr_binding = addr_entry_g -> binding;
+		addr_dim = addr_entry_g -> dim;
+		addr_shape = addr_entry_g -> shape;
+		addr_dtype = addr_entry_g -> dtype;
+	}
+	
+	if((ptr_dtype != intPtrType && ptr_dtype != strPtrType) || (addr_dtype != intType && addr_dtype != stringType)){
 		yyerror("Type Mismatch\n");
 		exit(0);
 	}
 	
-	if((ptr_entry -> dtype == intPtrType && addr_entry -> dtype != intType) || (ptr_entry -> dtype == strPtrType && addr_entry -> dtype != stringType)){
+	if((ptr_dtype == intPtrType && addr_dtype != intType) || (ptr_dtype == strPtrType && addr_dtype != stringType)){
 		yyerror("Type Mismatch\n");
 		exit(0);
 	}
 	
-	ptr_entry -> binding = addr_entry -> binding;
-	ptr_entry -> dim = addr_entry -> dim;
-	ptr_entry -> shape = addr_entry -> shape;
+	if(ptr_entry_l != NULL){
+		ptr_entry_l -> binding = addr_entry_l -> binding;
+		//return createTree(emp_data,ptr -> varname, NULL, NULL,ptr_dtype, leaf_node, NULL, ptr_entry_l, NULL, NULL, NULL);
+	}else{
+		
+		ptr_entry_g -> binding = addr_binding;
+		ptr_entry_g -> dim = addr_dim;
+		ptr_entry_g -> shape = addr_shape;
 	
-	return createTree(emp_data,NULL, NULL, NULL,ptr_entry -> dtype, leaf_node, ptr_entry, NULL, NULL, NULL, NULL);
+		//return createTree(emp_data,ptr -> varname, NULL, NULL,ptr_dtype, leaf_node, ptr_entry_g, NULL, NULL, NULL, NULL);
+	}
 }
 
 struct tnode* makeStringNode(char* str){

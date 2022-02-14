@@ -1,0 +1,32 @@
+decl
+int a;
+int func(int a);
+enddecl
+
+int func(int a){
+decl
+int b;
+enddecl
+begin
+if(a == 5)then
+ a = a + 2;
+ a = func(a);
+endif;
+return a;
+end
+}
+
+
+
+int main(){
+decl
+	int c,d,e;
+enddecl
+begin
+	a = 5;
+	read(c);
+	c = func(c);
+	write(c);
+	return 0;
+end
+}
