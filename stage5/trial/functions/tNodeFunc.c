@@ -121,12 +121,11 @@ struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct 
 
 struct tnode* makePtrNode(struct tnode* node){
 	union Data emp_data;
-	if(node -> dim == 0){
+	if(node -> dim == 0 || (node -> dtype != intType && node -> dtype != stringType)){
 		printf("Invalid derefencing (*)");
 		exit(0);
 	}
-	
-	return createTree(emp_data, NULL, node -> dim - 1,node -> dtype,ptr_node, NULL, NULL, NULL, NULL, node, NULL);	
+	return createTree(emp_data, NULL, node -> dim-1,node -> dtype,ptr_node, NULL, NULL, NULL, NULL, node, NULL);	
 }
 
 
@@ -150,9 +149,16 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 				
 				break;
 				
-		case assign:	if((l -> dtype == r -> dtype) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0)))
+		case assign:	if(l -> dim > 0 && l -> Gentry != NULL && l -> Gentry -> shape != NULL){
+					printf("Error: Assignment to expression with array type");
+					exit(0);
+				}
+				else if((l -> dtype == r -> dtype) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0)))
 					type = noType;
 				else{
+/*					printf("%s\n",l -> varname);*/
+/*					printf("DIM %d : %d\n",l -> Gentry -> dim, r -> dim);*/
+/*					printf("DTYPE %d : %d\n", l -> dtype, r -> dtype);*/
 					printf("Error: Type Mismatch(op: %d)\n",op);
 					exit(1);
 				}
@@ -193,24 +199,18 @@ struct tnode* makeConnectorNode(struct tnode *l,struct tnode *r){
 	return createTree(emp_data, NULL,-1,noType, connector, NULL, NULL, NULL, NULL, l, r);
 }
 
-struct tnode* makeReadNode(struct tnode *l){ // read node has only a left child
+struct tnode* makeReadNode(struct tnode *l){ // if a memory location is not passed in it will cause a runtime error
 	union Data emp_data;
-	if(l -> dim == 0)
-		return createTree(emp_data,NULL,l -> dim,noType,read,NULL,NULL, NULL, NULL,l,NULL);
-	else{
-		printf("Error: Cannot Read into array\n");
-		exit(1);
+	if(l -> dim != 0){
+		printf("Error: Reading of variable not possible");
+		exit(0);
 	}
+	return createTree(emp_data,NULL,l -> dim,noType,read,NULL,NULL, NULL, NULL,l,NULL);
 }
 
 struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 	union Data emp_data;
-	if(l -> dim == 0)
-		return createTree(emp_data,NULL,l -> dim,noType,write,NULL,NULL, NULL, NULL,l,NULL);
-	else{
-		printf("Error: Cannot Write array\n");
-		exit(1);
-	}
+	return createTree(emp_data,NULL,l -> dim,noType,write,NULL,NULL, NULL, NULL,l,NULL);
 }
 
 struct tnode* makeJumpNode(node_type nodetype){

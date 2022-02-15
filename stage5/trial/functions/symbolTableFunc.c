@@ -44,7 +44,7 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype dtype, int dim
 		elem -> flabel = getFuncLabel();
 	}
 	else{
-		elem -> binding = getMemLoc(calculateMemory(shape,dim));
+		elem -> binding = getMemLoc(calculateMemory(shape,dim) + 1); //1 space for the actual pointer that points to the start of array
 		elem -> flabel = -1;
 	}
 	

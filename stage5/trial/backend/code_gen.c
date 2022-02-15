@@ -2,24 +2,58 @@ void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct Arr
 	struct ArrayDims* temp_i = indices;
 	struct ArrayShape* temp_s = shape;
 	int reg1;
+	int indices_count = 0;
 	
-	for(int i=0; i < (dim_abs - dim_cur); ++i){
-		if(temp_i != NULL){
+	while(temp_i != NULL){
+		dim_cur += 1;
+		indices_count += 1;
+		temp_i = temp_i -> next;
+	}
+	temp_i = indices;
+	
+	for(int i=0; i < (dim_abs - dim_cur); ++i){ //resolving the pointer portion
+			fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
+	}
+	
+	if(temp_i != NULL){ //in the case of arrays
+		fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
+	}
+	while(temp_i != NULL){
 			reg1 = getReg();
 			oper_code_gen(temp_i -> node,fp,reg1);
-			fprintf(fp,"MUL R%d, %d\n",reg1,temp_s -> index);
-			fprintf(fp,"ADD R%d, R%d\n",reg, reg1);
+			if(indices_count != 1){
+				fprintf(fp,"MUL R%d, %d\n",reg1,temp_s -> index);
+				fprintf(fp,"ADD R%d, R%d\n",reg, reg1);
+			}else{
+				fprintf(fp,"ADD R%d, R%d\n",reg, reg1);
+			}
 			freeReg();
 			
 			temp_i = temp_i -> next;
 			temp_s = temp_s -> next;
+			indices_count -= 1;
 		}
-		fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-	}
+		
+	
 }
 
 
-void getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg){ //returns a register in which memLoc is stored
+void getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg){ 
+/*
+if it recieves a tnode with
+	
+	1. local entry :
+				1.1. leaf_node: store the memory location of leaf node in reg, 
+					1.1.1. for pointers: then performs dereferencing (dim_abs-(dim_curr + number of indices)) times and stores the final memory location in reg
+					1.1.2. for arrays: stores the actual memory location of the element being referenced in reg
+					1.1.3. for normal variables: nothing else
+				
+				1.2. ptr_node (*expr): gets you the computed value of expr and stores it in reg1
+				
+	2. Global entry : 
+			same
+
+*/
 	int reg1;
 
 	if(t -> Lentry != NULL){
@@ -31,9 +65,6 @@ void getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg){ //returns a registe
 					dimResCodeGen(fp,reg,t -> dim,t -> Lentry -> dim, NULL, NULL);
 					break;
 			
-			case ptr_node: //when its of the form *(a + k) and others
-					oper_code_gen(t -> left,fp,reg);
-					break;
 			
 			default: printf("Trying to access memory from a non-leaf/non-ptr notde");
 				exit(0);
@@ -42,26 +73,41 @@ void getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg){ //returns a registe
 		
 			
 	}
-	else{
+	else if(t -> Gentry != NULL){
 		switch(t -> nodetype){ //pointers and normal variables
 		
-			case leaf_node: fprintf(fp,"MOV R%d, BP\n",reg);
-					fprintf(fp,"ADD R%d, %d\n",reg, t -> Gentry -> binding); //got the memory location of variable
+			case leaf_node: fprintf(fp,"MOV R%d, %d\n",reg, t -> Gentry -> binding); //got the memory location of variable
 					dimResCodeGen(fp,reg,t -> dim,t -> Gentry -> dim, t -> indices, t -> Gentry -> shape);
 					break;
 			
-			case ptr_node: //when its of the form *(a + k) and others
-					oper_code_gen(t -> left,fp,reg);
-					break;
-			
 			default: printf("Trying to access memory from a non-leaf/non-ptr notde");
 				exit(0);
 		}
 	}
+	else if(t -> nodetype == ptr_node){
+		oper_code_gen(t -> left,fp,reg);
+	}
+	
+/*	else{//num node with address*/
+/*		if(t -> dim > 0){*/
+/*			fprintf(fp,"MOV R%d, BP\n",reg);*/
+/*			fprintf(fp,"ADD R%d, %d\n",reg, t -> val.num);*/
+/*		}*/
+/*	}*/
 }
 
 
-void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){
+void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){ 
+
+/*
+
+if it recieves a
+1. tnode with root as an operator: evaluates code for the entire operation and stores final result in reg1
+2. tnode with root as func_node: generates code to call func
+3. tnode with root as leaf node: stores the value of the leaf node in reg1
+4. tnode with root as ptr_node (*expr): calculates expr, then dereferences to expr and stores the value in reg1
+
+*/
 
 	reg_index reg1;
 	
@@ -72,14 +118,22 @@ void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){
 						fprintf(fp,"MOV R%d, [R%d]\n",reg, reg);
 						
 					}else{
-						t -> dtype == intType ? fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num) : fprintf(fp,"MOV R%d, %s\n",reg,t->val.str);
+						if(t -> dim > 0){
+							fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
+							fprintf(fp,"ADD R%d, BP\n",reg);
+						}else{
+							if(t -> dtype == intType)
+								fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
+							else
+								fprintf(fp,"MOV R%d, %s\n",reg,t->val.str);
+						}
 					}
 					break;
 					
 		case func_node: 	codeGen(t, fp, NULL);
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
-		case ptr_node: 	getVarMemLoc(t -> left,fp,reg);
+		case ptr_node: 	oper_code_gen(t -> left,fp,reg);
 					fprintf(fp,"MOV R%d, [R%d]\n",reg, reg);
 					break;
 		default:		
@@ -223,8 +277,9 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			break;
 			
 		//read lib call
-		case read: 	reg1 = getReg();
-				getVarMemLoc(t->left,fp,reg1);
+		case read: 	
+				reg1 = getReg();
+				getVarMemLoc(t->left,fp,reg1); 
 				lib_code_gen(read,reg1,fp);
 				freeReg();
 			break;

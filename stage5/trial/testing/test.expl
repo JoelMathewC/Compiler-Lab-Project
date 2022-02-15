@@ -9,6 +9,7 @@ enddecl
 begin
 	b = 2;
 	a = &b;
+	read(b);
 	write(*a);
 end
 }

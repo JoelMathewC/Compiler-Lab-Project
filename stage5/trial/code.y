@@ -38,6 +38,7 @@
 	struct LSymbolTable* lst;
 	FILE* startCodeGen(int memLoc);
 	void endCodeGen(FILE *fp);
+	void setMemLocationValues(struct GSymbolTable* gst,FILE* fp);
 	FILE *fp;
 %}
 
@@ -86,7 +87,7 @@ program : GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);
 GdeclBlock : DECL GdeclList ENDDECL 	{	
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,$2,noType);
-						fp = startCodeGen(memLoc);		
+						fp = startCodeGen(memLoc);	
 					}
 	| DECL ENDDECL			{gst = NULL;}
 	;
@@ -114,7 +115,7 @@ IdentifierDecl: STAR IdentifierDecl		{$$ = declIdNode($2 -> varname,$2 -> dim + 
 	| IdArrDecl				{$$ = $1;}
 	;
 	
-IdArrDecl : IdArrDecl '[' NUM ']'		{$$ = declIdNode($1 -> varname,$1 -> dim,addArrayShape($1 -> shape,$<number>3));}
+IdArrDecl : IdArrDecl '[' NUM ']'		{$$ = declIdNode($1 -> varname,$1 -> dim + 1,addArrayShape($1 -> shape,$<number>3));}
 	| ID					{$$ = declIdNode($<string>1,0,NULL);}	
 	;
 
@@ -268,6 +269,7 @@ FILE* startCodeGen(int memLoc){
 	if(memLoc > 0)
 		fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
+	setMemLocationValues(gst,fp);
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;
@@ -276,6 +278,21 @@ FILE* startCodeGen(int memLoc){
 void endCodeGen(FILE *fp){
 	lib_code_gen(end,0,fp);
 	fclose(fp);
+}
+
+void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
+	reg_index reg1;
+	struct Gsymbol* temp = gst -> head;
+	
+	while(temp != NULL){
+		if(temp -> shape != NULL){ //array
+			reg1 = getReg();
+			fprintf(fp,"MOV R%d, %d\n",reg1, temp -> binding);
+			fprintf(fp,"MOV [R%d], %d\n",reg1,(temp -> binding) - calculateMemory(temp -> shape,temp -> dim));
+			freeReg();
+		}
+		temp = temp -> next;
+	}
 }
 
 int main(int argc, char* argv[]) {
