@@ -68,12 +68,13 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype dtype, int dim
 }
 
 
-void LocalInstall(struct LSymbolTable* lst, char* name, datatype dtype, int paramLoc){
+void LocalInstall(struct LSymbolTable* lst, char* name, datatype dtype, int dim,int paramLoc){
 	struct Lsymbol* elem = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
 	
 
 	elem -> name = name;
 	elem -> dtype = dtype;
+	elem -> dim = dim;
 	elem -> next = NULL;
 	
 	if(paramLoc == 0) //local var
@@ -134,10 +135,10 @@ void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, datatype dty
 		case intType: 	addLocalVarToLST(lst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: LocalInstall(lst,root -> varname, dtype,0);
+		case leaf_node: LocalInstall(lst,root -> varname, dtype,root -> dim,0);
 				break;
 				
-		case func_node:LocalInstall(lst,root -> varname, dtype,0);
+		case func_node:LocalInstall(lst,root -> varname, dtype,root -> dim,0);
 				break;
 	}
 	
@@ -148,7 +149,7 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	int len = -3;
 	
 	while(temp_p != NULL){
-		LocalInstall(lst,temp_p -> name, temp_p -> dtype,len);
+		LocalInstall(lst,temp_p -> name, temp_p -> dtype,temp_p -> dim,len);
 		temp_p = temp_p -> next;
 		--len;
 	}

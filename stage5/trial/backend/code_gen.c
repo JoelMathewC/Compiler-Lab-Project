@@ -397,7 +397,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			break;
 		
 		case func_node:
-			functionCallerCode(fp,t -> Gentry -> binding,t -> args);
+			functionCallerCode(fp,t -> Gentry -> flabel,t -> args);
 			break;
 		
 		case and:	

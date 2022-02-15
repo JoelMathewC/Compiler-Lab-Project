@@ -105,7 +105,7 @@
 	
 	struct GSymbolTable* gst;
 	struct LSymbolTable* lst;
-	FILE* startCodeGen(int memLoc);
+	FILE* startCodeGen(int memLoc, struct GSymbolTable* gst);
 	void endCodeGen(FILE *fp);
 	void setMemLocationValues(struct GSymbolTable* gst,FILE* fp);
 	FILE *fp;
@@ -1652,7 +1652,7 @@ yyreduce:
                                         {	
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,(yyvsp[-1].dno),noType);
-						fp = startCodeGen(memLoc);	
+						fp = startCodeGen(memLoc,gst);	
 					}
 #line 1658 "y.tab.c"
     break;
@@ -1757,7 +1757,7 @@ yyreduce:
 #line 126 "code.y"
                                                         {	
 									struct Gsymbol* g = GlobalLookup(gst,(yyvsp[-6].string));
-									funcCodeGen((yyvsp[-2].no), fp,g -> binding);
+									funcCodeGen((yyvsp[-2].no), fp,g -> flabel);
 									lst = NULL;
 								}
 #line 1764 "y.tab.c"
@@ -1808,7 +1808,7 @@ yyreduce:
 #line 150 "code.y"
                                                                 {	
 									if(gst == NULL){
-										fp = startCodeGen(-1);	
+										fp = startCodeGen(-1,gst);	
 										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 									}
 									funcCodeGen((yyvsp[-2].no), fp,-1);}
@@ -2417,13 +2417,15 @@ void yyerror(char const *s)
     exit(0);
 }
 
-FILE* startCodeGen(int memLoc){
+FILE* startCodeGen(int memLoc, struct GSymbolTable* gst){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
 	if(memLoc > 0)
 		fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
-	setMemLocationValues(gst,fp);
+	
+	if(gst != NULL)
+		setMemLocationValues(gst,fp);
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;

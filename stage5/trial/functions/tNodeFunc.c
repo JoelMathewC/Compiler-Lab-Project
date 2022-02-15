@@ -80,7 +80,7 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, -1,temp_g -> dtype, func_node, NULL, temp_g, NULL, args, NULL, NULL);
+	return createTree(emp_data, c, 0,temp_g -> dtype, func_node, NULL, temp_g, NULL, args, NULL, NULL);
 }
 
 
@@ -122,6 +122,7 @@ struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct 
 struct tnode* makePtrNode(struct tnode* node){
 	union Data emp_data;
 	if(node -> dim == 0 || (node -> dtype != intType && node -> dtype != stringType)){
+		printf("%s : %d\n",node -> varname, node -> dim);
 		printf("Invalid derefencing (*)");
 		exit(0);
 	}
@@ -139,7 +140,7 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 		case mul:
 		case div:
 		case mod:	
-				if((l -> dtype == intType && r -> dtype == intType) && (l -> dim == 0 || r -> dim == 0)){
+				if((l -> dim == 0 && l -> dtype == intType) || (r -> dim == 0 && r -> dtype == intType)){
 					type = intType;
 					dim = l -> dim > r -> dim ? l -> dim : r -> dim;
 				}else{
@@ -156,9 +157,6 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 				else if((l -> dtype == r -> dtype) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0)))
 					type = noType;
 				else{
-/*					printf("%s\n",l -> varname);*/
-/*					printf("DIM %d : %d\n",l -> Gentry -> dim, r -> dim);*/
-/*					printf("DTYPE %d : %d\n", l -> dtype, r -> dtype);*/
 					printf("Error: Type Mismatch(op: %d)\n",op);
 					exit(1);
 				}
