@@ -122,7 +122,6 @@ struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct 
 struct tnode* makePtrNode(struct tnode* node){
 	union Data emp_data;
 	if(node -> dim == 0 || (node -> dtype != intType && node -> dtype != stringType)){
-		printf("%s : %d\n",node -> varname, node -> dim);
 		printf("Invalid derefencing (*)");
 		exit(0);
 	}
