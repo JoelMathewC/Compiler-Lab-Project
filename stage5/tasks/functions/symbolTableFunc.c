@@ -29,48 +29,24 @@ struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
 	return NULL;
 	
 }
-void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim, int shape[2], struct ParamStruct* params, int nodetype){
+void GlobalInstall(struct GSymbolTable* gst, char* name, datatype dtype, int dim, struct ArrayShape* shape, struct ParamStruct* params, int nodetype){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
-	switch(type){
-		case intType:  if(dim == 2)
-					elem -> dtype = intDoubleArrType;
-				else if(dim == 1)
-					elem -> dtype = intSingleArrType;
-				else if(dim == 0)
-					elem -> dtype = intType;
-				else
-					elem -> dtype = intPtrType;
-				break;
-				
-		case stringType: if(dim == 2)
-					elem -> dtype = strDoubleArrType;
-				else if(dim == 1)
-					elem -> dtype = strSingleArrType;
-				else if(dim == 0)
-					elem -> dtype = stringType;
-				else
-					elem -> dtype = strPtrType;
-				break;
-	}
-
-
+	elem -> dtype = dtype;
 	elem -> name = name;
 	elem -> dim = dim;
 	elem -> shape = shape;
 	elem -> params = params;
-	
-	int mem;
-	if(shape[0] <= 0) mem = 1;
-	else if(shape[1] <= 0) mem = shape[0];
-	else mem = shape[0] * shape[1];
-	
-	if(nodetype == func_node)
-		elem -> binding = getFuncLabel();
-	else
-		elem -> binding = (dim == -1) ? -1 : getMemLoc(mem);
-		
 	elem -> next = NULL;
+
+	if(nodetype == func_node){
+		elem -> binding = -1;
+		elem -> flabel = getFuncLabel();
+	}
+	else{
+		elem -> binding = getMemLoc(calculateMemory(shape,dim) + 1); //1 space for the actual pointer that points to the start of array
+		elem -> flabel = -1;
+	}
 	
 	struct Gsymbol* temp = gst -> head;
 	if(gst -> head == NULL)
@@ -92,24 +68,20 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, datatype type, int dim,
 }
 
 
-void LocalInstall(struct LSymbolTable* lst, char* name, datatype type, int paramLoc, boolean isPtr){
+void LocalInstall(struct LSymbolTable* lst, char* name, datatype dtype, int dim,int paramLoc){
 	struct Lsymbol* elem = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
 	
 
 	elem -> name = name;
-	
-	if(isPtr == True && (type != intPtrType && type != strPtrType))
-		elem -> dtype = (type == intType) ? intPtrType : strPtrType;
-	else	
-		elem -> dtype = type;
+	elem -> dtype = dtype;
+	elem -> dim = dim;
+	elem -> next = NULL;
 	
 	if(paramLoc == 0) //local var
 		elem -> binding = getLocalMemLoc();
 	else
 		elem -> binding = paramLoc;
-			
-	elem -> next = NULL;
-	
+
 	struct Lsymbol* temp = lst -> head;
 	if(temp == NULL)
 		lst -> head = elem;
@@ -128,7 +100,7 @@ void LocalInstall(struct LSymbolTable* lst, char* name, datatype type, int param
 }
 
 void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, datatype dtype){
-
+	
 	if(root == NULL)
 		return;
 	
@@ -151,6 +123,7 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, dat
 
 
 void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, datatype dtype){
+	
 	if(root == NULL)
 		return;
 	
@@ -162,10 +135,10 @@ void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, datatype dty
 		case intType: 	addLocalVarToLST(lst, root -> left, root -> nodetype);
 				break;
 			
-		case leaf_node: LocalInstall(lst,root -> varname, dtype,0,root -> dim == -1 ? True : False);
+		case leaf_node: LocalInstall(lst,root -> varname, dtype,root -> dim,0);
 				break;
 				
-		case func_node: LocalInstall(lst,root -> varname, dtype,0,root -> dim == -1 ? True : False);
+		case func_node:LocalInstall(lst,root -> varname, dtype,root -> dim,0);
 				break;
 	}
 	
@@ -176,7 +149,7 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	int len = -3;
 	
 	while(temp_p != NULL){
-		LocalInstall(lst,temp_p -> name, temp_p -> dtype,len,temp_p -> dim == -1 ? True : False);
+		LocalInstall(lst,temp_p -> name, temp_p -> dtype,temp_p -> dim,len);
 		temp_p = temp_p -> next;
 		--len;
 	}
@@ -228,18 +201,6 @@ void printGlobalSymbolTable(struct GSymbolTable* gst){
 				break;
 			case stringType: strcpy(ch,"string");
 				break;
-			case intSingleArrType: strcpy(ch,"int[]");
-				break;
-			case strSingleArrType: strcpy(ch,"string[]");	 	
-				break;
-			case intDoubleArrType: strcpy(ch,"int[][]");
-				break;
-			case strDoubleArrType: strcpy(ch,"string[][]");	 	
-				break;
-			case intPtrType: strcpy(ch,"int*");
-				break;
-			case strPtrType: strcpy(ch,"string*");	 	
-				break;
 		}
 		printf("Varname: %s, Datatype: %s\n",temp -> name, ch);
 		temp = temp -> next;
@@ -263,21 +224,24 @@ void printLocalSymbolTable(struct LSymbolTable* lst){
 				break;
 			case stringType: strcpy(ch,"string");
 				break;
-			case intSingleArrType: strcpy(ch,"int[]");
-				break;
-			case strSingleArrType: strcpy(ch,"string[]");	 	
-				break;
-			case intDoubleArrType: strcpy(ch,"int[][]");
-				break;
-			case strDoubleArrType: strcpy(ch,"string[][]");	 	
-				break;
-			case intPtrType: strcpy(ch,"int*");
-				break;
-			case strPtrType: strcpy(ch,"string*");	 	
-				break;
 		}
 		printf("Varname: %s, Datatype: %s\n",temp -> name, ch);
 		temp = temp -> next;
 	}
 	printf("\n");
+}
+
+
+int calculateMemory(struct ArrayShape* shape, int dim){
+	if(dim == 0) return 1;
+	if(shape == NULL) return 0;//pointers
+	
+	int mem = 1;
+	struct ArrayShape* node = shape;
+	while(node != NULL){
+		mem = mem * node -> index;
+		node = node -> next;
+	}
+	
+	return mem;
 }

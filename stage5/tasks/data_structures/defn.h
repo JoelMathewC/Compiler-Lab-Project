@@ -1,5 +1,6 @@
 //nodetype
 typedef  int node_type;
+#define ptr_node -3
 #define func_node -2
 #define leaf_node -1
 #define connector 0
@@ -33,17 +34,17 @@ typedef int datatype;
 #define boolType 0
 #define intType 1 //this has been hardcoded in lex
 #define stringType 2 //this has been hard coded in lex
-#define intSingleArrType 3 //One  dimensional array
-#define strSingleArrType 4 //One  dimensional array
-#define intDoubleArrType 5 //Two  dimensional array
-#define strDoubleArrType 6 //Two  dimensional array
-#define intPtrType 7
-#define strPtrType 8
 #define noType 9
-
-//SymbolTable Type
-#define global 1
-#define local 2
 
 // Declaration of enum
 typedef enum { False, True } boolean;
+
+
+
+
+/*#define intSingleArrType 3 //One  dimensional array*/
+/*#define strSingleArrType 4 //One  dimensional array*/
+/*#define intDoubleArrType 5 //Two  dimensional array*/
+/*#define strDoubleArrType 6 //Two  dimensional array*/
+/*#define intPtrType 7*/
+/*#define strPtrType 8*/

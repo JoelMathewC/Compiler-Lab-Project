@@ -36,8 +36,9 @@
 	
 	struct GSymbolTable* gst;
 	struct LSymbolTable* lst;
-	FILE* startCodeGen(int memLoc);
+	FILE* startCodeGen(int memLoc, struct GSymbolTable* gst);
 	void endCodeGen(FILE *fp);
+	void setMemLocationValues(struct GSymbolTable* gst,FILE* fp);
 	FILE *fp;
 %}
 
@@ -48,14 +49,15 @@
 	struct ArgStruct *at;
 	int number;
 	char* string;
+	int* seq;
 	
 }
 
 %type <at> ArgList
 %type <pt> Param ParamList
 %type <no> program MainBlock FdefBlock Fdef 
-%type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid
-%type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier
+%type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid IdentifierDecl IdArrDecl
+%type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier IdArr
 %type <number> Type
 
 %token MAIN
@@ -72,7 +74,7 @@
 %nonassoc GT GTE LT LTE EQ NEQ
 %left PLUS MINUS
 %left STAR DIV MOD
-%left ADDR
+%right ADDR
 
 
 %%
@@ -85,7 +87,7 @@ program : GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);
 GdeclBlock : DECL GdeclList ENDDECL 	{	
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,$2,noType);
-						fp = startCodeGen(memLoc);		
+						fp = startCodeGen(memLoc,gst);	
 					}
 	| DECL ENDDECL			{gst = NULL;}
 	;
@@ -105,12 +107,17 @@ GidList : GidList ',' Gid		{$$ = makeDConnectorNode($1,$3);}
 	| Gid				{$$ = $1;}
 	;
 	
-Gid : ID						{$$ = declIdNode($<string>1,0,0,0);}
-		| ID '[' NUM ']'			{$$ = declIdNode($<string>1,$<number>3,0,1);}
-		| ID '[' NUM ']' '[' NUM ']'		{$$ = declIdNode($<string>1,$<number>3,$<number>6,2);}
-		| STAR ID				{$$ = declIdNode($<string>2,0,0,-1);}
-		| ID '(' ParamList ')'			{$$ = declFuncNode($<string>1,$3);}
-		;
+Gid : IdentifierDecl				{$$ = $1;}
+	| ID '(' ParamList ')'			{$$ = declFuncNode($<string>1,$3);}
+	;
+	
+IdentifierDecl: STAR IdentifierDecl		{$$ = declIdNode($2 -> varname,$2 -> dim + 1,$2 -> shape);}
+	| IdArrDecl				{$$ = $1;}
+	;
+	
+IdArrDecl : IdArrDecl '[' NUM ']'		{$$ = declIdNode($1 -> varname,$1 -> dim + 1,addArrayShape($1 -> shape,$<number>3));}
+	| ID					{$$ = declIdNode($<string>1,0,NULL);}	
+	;
 
 FdefBlock : FdefBlock Fdef				{}
 	| Fdef						{}
@@ -118,7 +125,7 @@ FdefBlock : FdefBlock Fdef				{}
 
 Fdef : FName '{' LdeclBlock START Slist END '}'		{	
 									struct Gsymbol* g = GlobalLookup(gst,$<string>1);
-									funcCodeGen($5, fp,g -> binding);
+									funcCodeGen($5, fp,g -> flabel);
 									lst = NULL;
 								}
 	;
@@ -137,12 +144,12 @@ ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
 	;
 	
 Param : Type ID					{$$ = makeParamStruct($<string>2,$<number>1,0);}
-	| Type STAR ID					{$$ = makeParamStruct($<string>3,$<number>1 == intType ? intPtrType : strPtrType,-1);}
+	| Type STAR ID					{$$ = makeParamStruct($<string>3,$<number>1,1);}
 	;
 	 
 MainBlock :  MainHeader '{' LdeclBlock START Slist END'}'	{	
 									if(gst == NULL){
-										fp = startCodeGen(-1);	
+										fp = startCodeGen(-1,gst);	
 										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 									}
 									funcCodeGen($5, fp,-1);}
@@ -171,8 +178,8 @@ LidList : LidList ',' Lid		{$$ = makeDConnectorNode($1,$3);}
 	;
 
 
-Lid : ID						{$$ = declIdNode($<string>1,0,0,0);}
-	| STAR ID					{$$ = declIdNode($<string>2,0,0,-1);}
+Lid : ID						{$$ = declIdNode($<string>1,0,NULL);}
+	| STAR ID					{$$ = declIdNode($<string>2,1,NULL);}
 	;
 	
 
@@ -210,7 +217,6 @@ OutputStmt: WRITE '(' expr ')' ENDSTMT				{$$ = makeWriteNode($3);}
 	;
 
 AssgStmt: Identifier ASSIGN expr ENDSTMT				{$$ = makeOperatorNode(assign,$1,$3);}
-	| Identifier ASSIGN ADDR Identifier ENDSTMT			{makePtrIdNode($1, gst, lst, $4);}
 	;
 
 expr : expr PLUS expr		{$$ = makeOperatorNode(add,$1,$3);}
@@ -227,21 +233,26 @@ expr : expr PLUS expr		{$$ = makeOperatorNode(add,$1,$3);}
 	 | expr AND expr	{$$ = makeOperatorNode(and,$1,$3);}
 	 | expr OR expr	{$$ = makeOperatorNode(or,$1,$3);}
 	 | '(' expr ')'	{$$ = $2;}
-	 | NUM			{$$ = makeNumNode($<number>1);}
+	 | NUM			{$$ = makeNumNode($<number>1,0);}
+	 | MINUS NUM 		{$$ = makeNumNode(-1 * $<number>2,0);}
 	 | STRING		{$$ = makeStringNode($<string>1);}
 	 | ID '(' ')'		{$$ = makeFuncNode($<string>1,gst,NULL);}
 	 | ID '(' ArgList ')'	{$$ = makeFuncNode($<string>1,gst,$3);}
 	 | Identifier		{$$ = $1;}
+	 | ADDR Identifier	{$$ = makeAddrNode($2,gst,lst);}
 	 ;
 	 
 ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3));}
 	| expr				{$$ = makeArgStruct($1);}
 	;
+	
+Identifier : IdArr			{$$ = $1;}
+	| STAR '(' expr ')'		{$$ = makePtrNode($3);}
+	| STAR Identifier		{$$ = makePtrNode($2);}
+	;
 
-Identifier : ID				{$$ = makeIdNode($<string>1,gst,lst,NULL,NULL);}
-	| ID '[' expr ']'			{$$ = makeIdNode($<string>1,gst,lst,$3,NULL);}
-	| ID '[' expr ']' '[' expr ']'	{$$ = makeIdNode($<string>1,gst,lst,$3,$6);}
-	| STAR ID				{$$ = makeIdNode($<string>2,gst,lst,makeNumNode(0),NULL);}
+IdArr : IdArr '[' expr ']'		{$$ = makeIdNode($1 -> varname,gst,lst,addArrayDim($1 -> indices,$3));}
+	| ID				{$$ = makeIdNode($<string>1,gst,lst,NULL);}	
 	;
 
 %%
@@ -252,12 +263,15 @@ void yyerror(char const *s)
     exit(0);
 }
 
-FILE* startCodeGen(int memLoc){
+FILE* startCodeGen(int memLoc, struct GSymbolTable* gst){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
 	if(memLoc > 0)
 		fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
+	
+	if(gst != NULL)
+		setMemLocationValues(gst,fp);
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
 	return fp;
@@ -266,6 +280,21 @@ FILE* startCodeGen(int memLoc){
 void endCodeGen(FILE *fp){
 	lib_code_gen(end,0,fp);
 	fclose(fp);
+}
+
+void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
+	reg_index reg1;
+	struct Gsymbol* temp = gst -> head;
+	
+	while(temp != NULL){
+		if(temp -> shape != NULL){ //array
+			reg1 = getReg();
+			fprintf(fp,"MOV R%d, %d\n",reg1, temp -> binding);
+			fprintf(fp,"MOV [R%d], %d\n",reg1,(temp -> binding) - calculateMemory(temp -> shape,temp -> dim));
+			freeReg();
+		}
+		temp = temp -> next;
+	}
 }
 
 int main(int argc, char* argv[]) {

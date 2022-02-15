@@ -1,42 +1,15 @@
-struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct tnode* index2, datatype dtype, node_type nodetype, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct tnode *l, struct tnode *r){
+struct tnode* createTree(union Data val, char* c, int dim, datatype dtype, node_type nodetype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct tnode *l, struct tnode *r){
 	struct tnode* node;
 	node = (struct tnode*)malloc(sizeof(struct tnode));
 	
 	if(c != NULL){
-		node -> varname = (char*)malloc(sizeof(char));
-		strcpy(node -> varname,c);
+		node -> varname = strdup(c);
 	}
 	
 	node -> val = val;
-	node -> index1 = index1;
-	node -> index2 = index2;
-	
-	if(index1 == NULL && index2 == NULL) //no indexes
-		node -> dtype = dtype;
-	else if(index2 == NULL){  // one index (pointers have default first index as 0)
-		switch(dtype){
-			case intSingleArrType: 
-			case intPtrType: node -> dtype = intType;
-				break;
-			case intDoubleArrType: node -> dtype = intSingleArrType;
-				break;
-				
-			case strSingleArrType: 
-			case strPtrType: node -> dtype = stringType;
-				break;
-			case strDoubleArrType: node -> dtype = strSingleArrType;
-				break;
-		}
-	}
-	else{ //two indexex
-		switch(dtype){
-			case intDoubleArrType: node -> dtype = intType;
-				break;
-			case strDoubleArrType: node -> dtype = stringType;
-				break;
-		}
-	}
-	
+	node -> indices = indices;
+	node -> dim = dim;
+	node -> dtype = dtype;
 	node -> Gentry = Gentry;
 	node -> Lentry = Lentry;
 	node -> nodetype = nodetype;
@@ -46,34 +19,36 @@ struct tnode* createTree(union Data val, char* c, struct tnode* index1, struct t
 	return node;
 }
 
-struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* index1, struct tnode* index2){
+
+
+struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct ArrayDims* indices){
 
 	struct Gsymbol* temp_g = GlobalLookup(gst,c);
 	struct Lsymbol* temp_l = LocalLookup(lst,c);
 	union Data emp_data;
+	int dim;
+	int dtype;
 	
-	//if entry does not exist in symbol table
-	if(temp_g == NULL && temp_l == NULL){
+	if(temp_g == NULL && temp_l == NULL){ //if entry does not exist in symbol table
 		yyerror("Undefined Variable Referenced\n");
 		exit(0);
-	}
-	else if(temp_l != NULL)
+	}else if(temp_l != NULL){
 		temp_g = NULL;
-	else
+		dim = dimRes(temp_l -> dim,indices);
+		dtype = temp_l -> dtype;
+	}else{
 		temp_l = NULL;
-	
-
-	//invalid []
-	if(temp_g != NULL && temp_g -> dim == 0 && index1 != NULL && isSymbolPtr(temp_g) == False){ // 0D trying to access first dimension
-		printf("%s is not accessible to a first dimension\n",c);
-		exit(0);
+		dim = dimRes(temp_g -> dim,indices);
+		dtype = temp_g -> dtype;
 	}
-	else if(temp_g != NULL && temp_g -> dim == 1 && index2 != NULL){ // 1D array trying to access second dimension
-		printf("%s is not accessible to a second dimension\n",c);
+	
+		
+	if(dim < 0){
+		printf("%s is not accessible to given dimension\n",c);
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, index1, index2, temp_g == NULL ? temp_l -> dtype: temp_g -> dtype, leaf_node, temp_g, temp_l, NULL, NULL, NULL);
+	return createTree(emp_data, c, dim,dtype, leaf_node, indices, temp_g, temp_l, NULL, NULL, NULL);
 }
 
 
@@ -82,8 +57,8 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 	struct Gsymbol* temp_g = GlobalLookup(gst,c);
 	union Data emp_data;
 	
-	//if entry does not exist in symbol table
-	if(temp_g == NULL){
+	
+	if(temp_g == NULL){//if entry does not exist in symbol table
 		yyerror("Undefined Variable Referenced (Func)\n");
 		exit(0);
 	}
@@ -105,87 +80,58 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, NULL, NULL, temp_g -> dtype, func_node, temp_g, NULL, args, NULL, NULL);
+	return createTree(emp_data, c, 0,temp_g -> dtype, func_node, NULL, temp_g, NULL, args, NULL, NULL);
 }
 
 
-struct tnode* makeNumNode(int n){
+
+struct tnode* makeNumNode(int n, int dim){
 	union Data data;
 	data.num = n;
-	
-
-	return createTree(data,NULL, NULL, NULL,intType, leaf_node, NULL, NULL, NULL, NULL, NULL);
-}
-
-void makePtrIdNode(struct tnode* ptr, struct GSymbolTable* gst, struct LSymbolTable* lst, struct tnode* addr){
-
-	struct Lsymbol* ptr_entry_l = LocalLookup(lst,ptr -> varname);
-	struct Lsymbol* addr_entry_l = LocalLookup(lst,addr -> varname);
-	
-	struct Gsymbol* ptr_entry_g = GlobalLookup(gst,ptr -> varname);
-	struct Gsymbol* addr_entry_g = GlobalLookup(gst,addr -> varname);
-	union Data emp_data;
-	
-	//if entry does not exist in symbol table
-	if((ptr_entry_l == NULL && ptr_entry_g == NULL) || (addr_entry_l == NULL && addr_entry_g == NULL)){
-		yyerror("Undefined Variable Referenced (ptr)\n");
-		exit(0);
-	}
-	
-	datatype ptr_dtype;
-	datatype addr_dtype;
-	int addr_binding;
-	int addr_dim;
-	int* addr_shape;
-	
-	ptr_dtype = ptr_entry_l != NULL ? ptr_entry_l -> dtype : ptr_entry_g -> dtype;
-	
-	if(addr_entry_l != NULL){
-		addr_binding = addr_entry_l -> binding;
-		addr_dtype = addr_entry_l -> dtype;
-	}else{
-		addr_binding = addr_entry_g -> binding;
-		addr_dim = addr_entry_g -> dim;
-		addr_shape = addr_entry_g -> shape;
-		addr_dtype = addr_entry_g -> dtype;
-	}
-	
-	if((ptr_dtype != intPtrType && ptr_dtype != strPtrType) || (addr_dtype != intType && addr_dtype != stringType)){
-		yyerror("Type Mismatch\n");
-		exit(0);
-	}
-	
-	if((ptr_dtype == intPtrType && addr_dtype != intType) || (ptr_dtype == strPtrType && addr_dtype != stringType)){
-		yyerror("Type Mismatch\n");
-		exit(0);
-	}
-	
-	if(ptr_entry_l != NULL){
-		ptr_entry_l -> binding = addr_entry_l -> binding;
-		//return createTree(emp_data,ptr -> varname, NULL, NULL,ptr_dtype, leaf_node, NULL, ptr_entry_l, NULL, NULL, NULL);
-	}else{
-		
-		ptr_entry_g -> binding = addr_binding;
-		ptr_entry_g -> dim = addr_dim;
-		ptr_entry_g -> shape = addr_shape;
-	
-		//return createTree(emp_data,ptr -> varname, NULL, NULL,ptr_dtype, leaf_node, ptr_entry_g, NULL, NULL, NULL, NULL);
-	}
+	return createTree(data,NULL, dim,intType, leaf_node, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 struct tnode* makeStringNode(char* str){
 	union Data data;
 	data.str = str;
-	
-	struct tNode* index[2];
-	return createTree(data, NULL, NULL, NULL, stringType,leaf_node, NULL, NULL, NULL, NULL, NULL);
+	return createTree(data, NULL, 0,stringType,leaf_node, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+
+struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct LSymbolTable* lst){
+	struct Gsymbol* temp_g = GlobalLookup(gst,node -> varname);
+	struct Lsymbol* temp_l = LocalLookup(lst,node -> varname);
+	union Data emp_data;
+	int binding;
+	int dim;
+	
+	if(temp_g == NULL && temp_l == NULL){ //if entry does not exist in symbol table
+		yyerror("Undefined Variable Referenced\n");
+		exit(0);
+	}else if(temp_l != NULL){
+		dim = temp_l -> dim + 1;
+		binding = temp_l -> binding;
+	}else{
+		dim = temp_g -> dim + 1;
+		binding = temp_g -> binding;
+	}
+		
+	return makeNumNode(binding, dim);
+}
+
+struct tnode* makePtrNode(struct tnode* node){
+	union Data emp_data;
+	if(node -> dim == 0 || (node -> dtype != intType && node -> dtype != stringType)){
+		printf("Invalid derefencing (*)");
+		exit(0);
+	}
+	return createTree(emp_data, NULL, node -> dim-1,node -> dtype,ptr_node, NULL, NULL, NULL, NULL, node, NULL);	
+}
 
 
 struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 
-	int type;
+	int type,dim = -1;
 
 	switch(op){
 		case add:
@@ -193,8 +139,9 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 		case mul:
 		case div:
 		case mod:	
-				if(l -> dtype == intType && r -> dtype == intType){
+				if((l -> dim == 0 && l -> dtype == intType) || (r -> dim == 0 && r -> dtype == intType)){
 					type = intType;
+					dim = l -> dim > r -> dim ? l -> dim : r -> dim;
 				}else{
 					printf("Error: Type Mismatch(op: %d)\n",op);
 					exit(1);
@@ -202,7 +149,11 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 				
 				break;
 				
-		case assign:	if(isValPtr(l) == False && isValPtr(r) == False && (l -> dtype == r -> dtype))
+		case assign:	if(l -> dim > 0 && l -> Gentry != NULL && l -> Gentry -> shape != NULL){
+					printf("Error: Assignment to expression with array type");
+					exit(0);
+				}
+				else if((l -> dtype == r -> dtype) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0)))
 					type = noType;
 				else{
 					printf("Error: Type Mismatch(op: %d)\n",op);
@@ -236,113 +187,82 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r){
 	}
 	
 	union Data emp_data;
-	return createTree(emp_data,NULL,NULL, NULL,type , op, NULL, NULL, NULL, l, r);
+	return createTree(emp_data,NULL,dim,type , op, NULL, NULL, NULL, NULL, l, r);
 }
 
 
 struct tnode* makeConnectorNode(struct tnode *l,struct tnode *r){
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, connector, NULL, NULL, NULL, l, r);
+	return createTree(emp_data, NULL,-1,noType, connector, NULL, NULL, NULL, NULL, l, r);
 }
 
-struct tnode* makeReadNode(struct tnode *l){ // read node has only a left child
+struct tnode* makeReadNode(struct tnode *l){ // if a memory location is not passed in it will cause a runtime error
 	union Data emp_data;
-	if(l -> dtype == intType || l -> dtype == stringType)
-		return createTree(emp_data,NULL,NULL,NULL,noType,read,NULL, NULL, NULL,l,NULL);
-	else{
-		printf("Error: Cannot Read into array\n");
-		exit(1);
+	if(l -> dim != 0){
+		printf("Error: Reading of variable not possible");
+		exit(0);
 	}
+	return createTree(emp_data,NULL,l -> dim,noType,read,NULL,NULL, NULL, NULL,l,NULL);
 }
 
 struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 	union Data emp_data;
-	if(l -> dtype == intType || l -> dtype == stringType)
-		return createTree(emp_data,NULL,NULL,NULL,noType,write,NULL, NULL, NULL,l,NULL);
-	else{
-		printf("Error: Cannot Write array\n");
-		exit(1);
-	}
+	return createTree(emp_data,NULL,l -> dim,noType,write,NULL,NULL, NULL, NULL,l,NULL);
 }
 
 struct tnode* makeJumpNode(node_type nodetype){
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, nodetype,NULL, NULL,NULL, NULL,NULL);
+	return createTree(emp_data, NULL,-1,noType, nodetype, NULL, NULL, NULL,NULL, NULL,NULL);
 }
 
 struct tnode* makeReturnNode(struct tnode* t){
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType,return_node,NULL, NULL,NULL, t,NULL);
+	return createTree(emp_data, NULL,t -> dim,noType,return_node,NULL, NULL, NULL,NULL, t,NULL);
 }
 
 struct tnode* makeIfElseBlock(struct tnode* cond, struct tnode* then_node, struct tnode* else_node){// left child is condition, right child is connector (left: if, right: else)
 	union Data emp_data;
-	struct tnode* node1 = createTree(emp_data, NULL,NULL,NULL,noType, then_else_node, NULL, NULL, NULL, then_node,else_node);
-	struct tnode* node2 = createTree(emp_data, NULL,NULL,NULL,noType, if_node, NULL, NULL, NULL, cond,node1);
+	struct tnode* node1 = createTree(emp_data, NULL,-1,noType, then_else_node, NULL, NULL, NULL, NULL, then_node,else_node);
+	struct tnode* node2 = createTree(emp_data, NULL,-1,noType, if_node, NULL, NULL, NULL, NULL, cond,node1);
 	return node2;
 }
 
 struct tnode* makeWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, while_node, NULL, NULL, NULL, cond, body);
+	return createTree(emp_data, NULL,-1,noType, while_node, NULL, NULL, NULL, NULL, cond, body);
 }
 
 struct tnode* makeDoWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,NULL,NULL,noType, do_while, NULL, NULL, NULL, cond, body);
+	return createTree(emp_data, NULL,-1,noType, do_while, NULL, NULL, NULL, NULL, cond, body);
 }
 
 
-boolean isSymbolPtr(struct Gsymbol* g){ //if the symbol is a pointer (will classify *ptr as a pointer)
-	if(g -> dtype == intPtrType || g -> dtype == strPtrType)
-		return True;
-	return False;
+
+/*--------------------------------- Helper functions ---------------------------------------------*/
+
+struct ArrayDims* addArrayDim(struct ArrayDims* node, struct tnode* t){
+	struct ArrayDims* new_node = (struct ArrayDims*)malloc(sizeof(struct ArrayDims));
+	new_node -> node = t;
+	new_node -> next = NULL;
+	
+	struct ArrayDims* temp = node;
+	if(temp == NULL)
+		node = new_node;
+	else{
+		while(temp -> next != NULL)	
+			temp = temp -> next;
+		temp -> next = new_node;
+	}
+	
+	return node;
 }
 
-boolean isValPtr(struct tnode* g){ //if the value is a pointer (will classify *ptr as an int/str)
-	if(g -> dtype == intPtrType || g -> dtype == strPtrType)
-		return True;
-	return False;
+int dimRes(int dim, struct ArrayDims* indices){
+	struct ArrayDims* temp = indices;
+	while(temp != NULL){
+		dim -= 1;
+		temp = temp -> next;
+	}
+	return dim;
 }
-
-/*boolean validateArr(struct tnode* node){*/
-/*	*/
-/*	if(node -> type == intArrType || node -> type == strArrType){*/
-/*		if(node -> Gentry -> dim == 1){ //1D*/
-/*			if(node -> index1 == NULL){*/
-/*				*/
-/*				printf("Error: Array(%s) index missing. Dim: %d\n",node -> varname, node -> Gentry -> dim);*/
-/*				exit(1);*/
-/*			}*/
-/*		}*/
-/*		else if(node -> Gentry -> dim == 2){ //2D*/
-/*			if(node -> index2 == NULL){*/
-/*				printf("Error: Array(%s) index missing. Dim: %d\n",node -> varname, node -> Gentry -> dim);*/
-/*				exit(1);*/
-/*			}*/
-/*		}*/
-/*		return True;*/
-/*	}*/
-/*	return False;*/
-/*}*/
-
-
-/*boolean validateOper(struct tnode* node){*/
-/*	if(node -> type == intType)*/
-/*		return True;*/
-/*	if(node -> type == intArrType && validateArr(node) == True)*/
-/*		return True;*/
-/*	return False;*/
-/*}*/
-
-
-
-
-
-
-
-
-
-
-
-

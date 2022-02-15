@@ -1,3 +1,5 @@
+void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct ArrayDims* indices, struct ArrayShape* shape);
+
 void getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg);
 
 void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg);
