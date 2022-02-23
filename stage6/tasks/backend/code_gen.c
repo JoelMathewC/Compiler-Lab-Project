@@ -124,6 +124,8 @@ if it recieves a
 								fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
 							else if(strcmp(t -> dtype -> type_name,"string") == 0)
 								fprintf(fp,"MOV R%d, %s\n",reg,t->val.str);
+							else if(strcmp(t -> dtype -> type_name,"null") == 0)
+								fprintf(fp,"MOV R%d, %d\n",reg,0);
 						}
 					}
 					break;
