@@ -1,0 +1,28 @@
+type
+node{
+int a;
+string b;
+node n;
+}
+endtype
+decl
+int c;
+enddecl
+int main(){
+decl
+node n,t;
+enddecl
+begin
+Initialize();
+n = alloc();
+n.a = 1;
+n.b = "Hello";
+n.n = alloc();
+n.n.a = 2;
+write(n.n.a);
+write(n.a);
+write(n.b);
+free(n);
+t = alloc();
+end
+}
