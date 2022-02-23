@@ -1,0 +1,10 @@
+decl
+int a[3][3][3];
+enddecl
+
+int main(){
+begin
+	read(a[2][1][2]);
+	write(*(*(*(a + 2) + 1) + 2));
+end
+}

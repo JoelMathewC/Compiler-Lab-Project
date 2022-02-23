@@ -2605,10 +2605,23 @@ void yyerror(char const *s)
 }
 
 FILE* startCodeGen(int memLoc, struct GSymbolTable* gst){
+	int label1 = getLabel();
+	
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
-	if(memLoc > 0)
+	
+	//to shift the SP and fill it with 0
+	fprintf(fp,"MOV R2, SP\n");
+	if(memLoc > 0){
 		fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
+		fprintf(fp,"L%d:\n",label1);
+		fprintf(fp,"ADD R2, 1\n");
+		fprintf(fp,"MOV R1, R2\n");
+		fprintf(fp,"MOV [R1], 0\n");
+		fprintf(fp,"EQ R1, SP\n");
+		fprintf(fp,"JZ R1, L%d\n",label1);
+	}
+	
 	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
 	
 	if(gst != NULL)
@@ -2625,16 +2638,37 @@ void endCodeGen(FILE *fp){
 
 void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
 	reg_index reg1;
-	struct Gsymbol* temp = gst -> head;
+	int curr_mem = 0;
+	struct Gsymbol* node = gst -> head;
+	struct ArrayShape *shape;
+	int index1,index2,temp,endFrame;
 	
-	while(temp != NULL){
-		if(temp -> shape != NULL){ //array
-			reg1 = getReg();
-			fprintf(fp,"MOV R%d, %d\n",reg1, temp -> binding);
-			fprintf(fp,"MOV [R%d], %d\n",reg1,(temp -> binding) - calculateMemory(temp -> shape,temp -> dim));
-			freeReg();
+	
+	while(node != NULL){ // loop through global symbol table
+		shape = node -> shape;
+		if(shape != NULL){
+			
+			curr_mem = node -> binding;
+			index1 = 1;
+			
+			while(shape != NULL){
+			
+				index2 = shape -> index;
+				endFrame = curr_mem + index1;
+				for(int i = 0; i<index1; ++i){
+					temp = endFrame + (i * index2);
+					fprintf(fp,"MOV R1, %d\n",curr_mem);
+					fprintf(fp,"MOV [R1], %d\n", temp);
+					curr_mem += 1;
+				}
+				
+				index1 = index1 * index2;
+				curr_mem = endFrame;
+				shape = shape -> next;
+
+			}
 		}
-		temp = temp -> next;
+		node = node -> next;
 	}
 }
 

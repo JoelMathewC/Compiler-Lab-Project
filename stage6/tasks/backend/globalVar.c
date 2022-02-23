@@ -23,8 +23,9 @@ void freeReg(){
 }
 
 int getMemLoc(int amount){
+	int a = memLoc;
 	memLoc += amount;
-	return memLoc;
+	return a + 1; //first of memory allocated
 }
 
 int getLocalMemLoc(){

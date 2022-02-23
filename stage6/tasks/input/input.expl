@@ -11,9 +11,10 @@ enddecl
 int main(){
 decl
 node n,t;
+int a;
 enddecl
 begin
-Initialize();
+a = initialize();
 n = alloc();
 n.a = 1;
 n.b = "Hello";
@@ -22,7 +23,7 @@ n.n.a = 2;
 write(n.n.a);
 write(n.a);
 write(n.b);
-free(n);
+a = free(n);
 t = alloc();
 end
 }

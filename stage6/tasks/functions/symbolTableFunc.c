@@ -44,7 +44,7 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, struct TypeTableEntry* 
 		elem -> flabel = getFuncLabel();
 	}
 	else{
-		elem -> binding = getMemLoc(calculateMemory(shape,dim) + 1); //1 space for the actual pointer that points to the start of array
+		elem -> binding = getMemLoc(calculateMemory(shape,dim)); 
 		elem -> flabel = -1;
 	}
 	
@@ -216,14 +216,22 @@ void printLocalSymbolTable(struct LSymbolTable* lst){
 
 int calculateMemory(struct ArrayShape* shape, int dim){
 	if(dim == 0) return 1;
-	if(shape == NULL) return 0;//pointers
+	if(shape == NULL) return 1;//pointers
 	
-	int mem = 1;
+	//arrays
+	int mem = 0, prev_mem;
 	struct ArrayShape* node = shape;
 	while(node != NULL){
-		mem = mem * node -> index;
+		if(mem == 0){
+			mem = node -> index;
+			prev_mem = mem;
+		}else{
+			mem += prev_mem * node -> index;
+			prev_mem = prev_mem * node -> index;
+		}
 		node = node -> next;
 	}
 	
+	mem = mem+1; //location for the real base of an n-dimensional array
 	return mem;
 }

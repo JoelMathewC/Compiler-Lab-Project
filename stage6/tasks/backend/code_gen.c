@@ -1,38 +1,25 @@
 void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct ArrayDims* indices, struct ArrayShape* shape){// (dim_cur is current dim) and (dim_abs is dim in symbol table)
 	struct ArrayDims* temp_i = indices;
-	struct ArrayShape* temp_s = shape;
 	int reg1;
-	int indices_count = 0;
+
 	
-	while(temp_i != NULL){
-		dim_cur += 1;
-		indices_count += 1;
-		temp_i = temp_i -> next;
-	}
-	temp_i = indices;
 	
-	for(int i=0; i < (dim_abs - dim_cur); ++i){ //resolving the pointer portion
-			fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-	}
-	
-	if(temp_i != NULL){ //in the case of arrays
-		fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-	}
-	while(temp_i != NULL){
+	for(int i=0; i < (dim_abs - dim_cur); ++i){ 
+		if(temp_i != NULL){// resolve the array part first
 			reg1 = getReg();
+			
+			fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
 			oper_code_gen(temp_i -> node,fp,reg1);
-			if(indices_count != 1){
-				fprintf(fp,"MUL R%d, %d\n",reg1,temp_s -> index);
-				fprintf(fp,"ADD R%d, R%d\n",reg, reg1);
-			}else{
-				fprintf(fp,"ADD R%d, R%d\n",reg, reg1);
-			}
+			fprintf(fp,"ADD R%d, R%d\n",reg,reg1);
+			
 			freeReg();
 			
 			temp_i = temp_i -> next;
-			temp_s = temp_s -> next;
-			indices_count -= 1;
 		}
+		else{
+			fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
+		}
+	}
 		
 	
 }
@@ -587,9 +574,21 @@ void functionCallerCode(FILE *fp, int label, struct ArgStruct *args){
 }
 
 void functionCalledStartCode(FILE *fp){
+	int label1 = getLabel();
+	
 	fprintf(fp,"PUSH BP\n");
 	fprintf(fp,"MOV BP, SP\n");
-	fprintf(fp,"ADD SP, %d\n",localMemLoc);
+	
+	if(localMemLoc > 0){
+		fprintf(fp,"MOV R2, SP\n");
+		fprintf(fp,"ADD SP, %d\n",localMemLoc); //statically allocates global variable space
+		fprintf(fp,"L%d:\n",label1);
+		fprintf(fp,"ADD R2, 1\n");
+		fprintf(fp,"MOV R1, R2\n");
+		fprintf(fp,"MOV [R1], 0\n");
+		fprintf(fp,"EQ R1, SP\n");
+		fprintf(fp,"JZ R1, L%d\n",label1);
+	}
 }
 
 void functionCalledEndCode(FILE *fp,int label){
