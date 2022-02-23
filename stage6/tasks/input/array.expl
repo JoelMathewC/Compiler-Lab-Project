@@ -1,0 +1,22 @@
+type
+  bst{
+  int a;
+  string b;
+  }
+endtype
+
+decl
+  bst tree[3][3];         
+enddecl
+
+int main(){
+decl
+int x;
+enddecl
+begin
+x = initialize();
+tree[0][0] = alloc();
+read(tree[0][0].a);
+write(tree[0][0].a);
+end
+}
