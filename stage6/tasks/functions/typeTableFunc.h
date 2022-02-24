@@ -1,6 +1,6 @@
 struct TypeTable* TypeTableCreate();
 
-struct TypeTableEntry* TInstall(char* name,int size, struct FieldList* fl);
+struct TypeTableEntry* TInstall(char* name,int size, int nodetype, struct FieldList* fl);
 
 int GetSize(struct TypeTable* table, char* name);
 
@@ -8,8 +8,9 @@ struct TypeTableEntry* TLookup(struct TypeTable* table, char* name);
 
 struct FieldList* FLookup(struct FieldList* fl, char* name);
 
+void addTupleToTypeTable(struct TypeTable* table, struct ParamStruct* pt, char* type_name);
 
-void addToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name);
+void addUserDefToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name);
 
 int calculateDtypeSize(struct FieldList* fl, struct TypeTable* table);
 

@@ -32,6 +32,11 @@ struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
 void GlobalInstall(struct GSymbolTable* gst, char* name, struct TypeTableEntry* dtype, int dim, struct ArrayShape* shape, struct ParamStruct* params, int nodetype){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
+	if(dtype -> nodetype == tupleType && shape != NULL){ //to not permit arrays of tuples
+		printf("Error: Arrays of Tuples not permitted");
+		exit(0);
+	}
+	
 	elem -> dtype = dtype;
 	elem -> name = name;
 	elem -> dim = dim;
@@ -44,7 +49,7 @@ void GlobalInstall(struct GSymbolTable* gst, char* name, struct TypeTableEntry* 
 		elem -> flabel = getFuncLabel();
 	}
 	else{
-		elem -> binding = getMemLoc(calculateMemory(shape,dim)); 
+		elem -> binding = getMemLoc(calculateMemory(shape,dim, dtype)); 
 		elem -> flabel = -1;
 	}
 	
@@ -214,24 +219,34 @@ void printLocalSymbolTable(struct LSymbolTable* lst){
 }
 
 
-int calculateMemory(struct ArrayShape* shape, int dim){
-	if(dim == 0) return 1;
-	if(shape == NULL) return 1;//pointers
+int calculateMemory(struct ArrayShape* shape, int dim, struct TypeTableEntry* dtype){
+	if(dtype -> nodetype == tupleType){ //because tuple is a special type we are making it as a seperate type
+		
+		if(dim == 0) return dtype -> size + 1; //actual value
+		else return 1; //pointer
 	
-	//arrays
-	int mem = 0, prev_mem;
-	struct ArrayShape* node = shape;
-	while(node != NULL){
-		if(mem == 0){
-			mem = node -> index;
-			prev_mem = mem;
-		}else{
-			mem += prev_mem * node -> index;
-			prev_mem = prev_mem * node -> index;
-		}
-		node = node -> next;
 	}
+	else{
 	
-	mem = mem+1; //location for the real base of an n-dimensional array
-	return mem;
+		if(dim == 0) return 1;
+		if(shape == NULL) return 1;//pointers
+		
+		//arrays
+		int mem = 0, prev_mem;
+		struct ArrayShape* node = shape;
+		while(node != NULL){
+			if(mem == 0){
+				mem = node -> index;
+				prev_mem = mem;
+			}else{
+				mem += prev_mem * node -> index;
+				prev_mem = prev_mem * node -> index;
+			}
+			node = node -> next;
+		}
+		
+		mem = mem+1; //location for the real base of an n-dimensional array
+		return mem;
+	}
+		
 }

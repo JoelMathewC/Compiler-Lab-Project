@@ -30,6 +30,7 @@ int		{yylval.string = strdup(yytext); return INT;}
 string		{yylval.string = strdup(yytext); return STR;}
 void 		{yylval.string = strdup(yytext); return VOID;}
 null		{yylval.string = strdup(yytext); return NULL_TYPE;}
+tuple		{yylval.string = strdup(yytext); return TUPLE;}
 if		{return IF;}
 then		{return THEN;}
 else		{return ELSE;}

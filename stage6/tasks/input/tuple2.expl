@@ -1,0 +1,17 @@
+decl
+  tuple student(string name, int age) s1; 
+  void func(student s2);       
+enddecl
+void func(student s2){
+begin
+write(s2.name);
+write(s2.age);
+end
+}
+int main(){
+begin
+read(s1.name);
+read(s1.age);
+func(s1);
+end
+}

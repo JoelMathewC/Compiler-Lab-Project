@@ -58,6 +58,7 @@ int dimRes(int dim, struct ArrayDims* indices);
 
 boolean isMemAssignable(struct tnode* node);
 
+boolean isOperable(struct tnode* left, struct tnode* right, struct TypeTable* table);
 
 
 

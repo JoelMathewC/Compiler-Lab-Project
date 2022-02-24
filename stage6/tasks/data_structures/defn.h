@@ -1,6 +1,7 @@
 //nodetype
 typedef  int node_type;
-#define type_node -4
+#define type_node -5
+#define addr_node -4
 #define ptr_node -3
 #define func_node -2
 #define leaf_node -1
@@ -37,9 +38,13 @@ typedef  int node_type;
 
 //datatype
 typedef int datatype;
+
+#define voidType -1
 #define boolType 0
-#define intType 1 //this has been hardcoded in lex
-#define stringType 2 //this has been hard coded in lex
+#define intType 1 
+#define stringType 2 
+#define tupleType 3
+#define userDefType 4
 
 // Declaration of enum
 typedef enum { False, True } boolean;

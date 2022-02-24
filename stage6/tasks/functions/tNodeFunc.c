@@ -36,11 +36,11 @@ struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable*
 	}else if(temp_l != NULL){
 		temp_g = NULL;
 		dim = dimRes(temp_l -> dim,indices);
-		dtype = dim > 0 ? TLookup(table,"int") : temp_l -> dtype;
+		dtype = temp_l -> dtype;
 	}else{
 		temp_l = NULL;
 		dim = dimRes(temp_g -> dim,indices);
-		dtype = dim > 0 ? TLookup(table,"int") : temp_g -> dtype;
+		dtype = temp_g -> dtype;
 	}
 	
 		
@@ -127,7 +127,7 @@ struct tnode* makeNullNode(struct TypeTable* table){
 struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct LSymbolTable* lst, struct TypeTable* table){
 	struct Gsymbol* temp_g = GlobalLookup(gst,node -> varname);
 	struct Lsymbol* temp_l = LocalLookup(lst,node -> varname);
-	union Data emp_data;
+	union Data data;
 	int binding;
 	int dim;
 	
@@ -142,19 +142,19 @@ struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct 
 		binding = temp_g -> binding;
 	}
 		
-	return makeNumNode(binding, dim,table);
+	data.num = binding;
+	return createTree(data, NULL, dim,node -> dtype,leaf_node, NULL, NULL, NULL, NULL, NULL, NULL, NULL);	
 }
 
 struct tnode* makePtrNode(struct tnode* node, struct TypeTable* table){
 	union Data emp_data;
-	if(node -> dim == 0 || (strcmp(node -> dtype -> type_name, "int") != 0 && strcmp(node -> dtype -> type_name, "string") != 0)){
+	if(node -> dim == 0){
 		printf("Invalid derefencing (*)");
 		exit(0);
 	}
 	struct TypeTableEntry* dtype = node -> dim - 1 == 0 ? node -> dtype : TLookup(table,"int");
 	return createTree(emp_data, NULL, node -> dim-1,dtype,ptr_node, NULL, NULL, NULL, NULL, NULL, node, NULL);	
 }
-
 
 
 struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct TypeTable* table){
@@ -168,7 +168,7 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 		case mul:
 		case div:
 		case mod:	
-				if((strcmp(l -> dtype -> type_name, "int") == 0 && strcmp(r -> dtype -> type_name, "int") == 0) && (r -> dim == 0 || l -> dim == 0)){
+				if(isOperable(l,r,table) == True){
 					dtype = l -> dtype;
 					dim = l -> dim > r -> dim ? l -> dim : r -> dim;
 				}else{
@@ -179,7 +179,6 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 				break;
 				
 		case assign:	
-				
 				switch(r -> nodetype){
 				
 					case alloc_node : if(isMemAssignable(l) == True)
@@ -347,4 +346,27 @@ boolean isMemAssignable(struct tnode* node){
 		return False;
 	
 	return True;
+}
+
+
+boolean isOperable(struct tnode* left, struct tnode* right, struct TypeTable* table){
+	
+	struct TypeTableEntry *dtype_l, *dtype_r;
+	
+	if(left -> dim > 0)
+		dtype_l = TLookup(table,"int");
+	else
+		dtype_l = left -> dtype;
+	
+	if(right -> dim > 0)
+		dtype_r = TLookup(table,"int");
+	else
+		dtype_r = right -> dtype;
+	
+	if((strcmp(left -> dtype -> type_name, "int") == 0 && strcmp(right -> dtype -> type_name, "int") == 0) && (right -> dim == 0 || left -> dim == 0))
+		return True;
+	
+	return False;
+	
+	
 }

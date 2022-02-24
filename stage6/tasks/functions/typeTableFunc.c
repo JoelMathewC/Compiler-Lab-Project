@@ -6,24 +6,24 @@ struct TypeTable* TypeTableCreate(){
 	
 	name = (char*)malloc(sizeof(char));
 	strcpy(name,"null");
-	struct TypeTableEntry* null_type = TInstall(name,0,NULL);
+	struct TypeTableEntry* null_type = TInstall(name,0, voidType,NULL);
 	
 	
 	name = (char*)malloc(sizeof(char));
 	strcpy(name,"void");
-	struct TypeTableEntry* void_type = TInstall(name,0,NULL);
+	struct TypeTableEntry* void_type = TInstall(name,0,voidType,NULL);
 	
 	name = (char*)malloc(sizeof(char));
 	strcpy(name,"bool");
-	struct TypeTableEntry* bool_type = TInstall(name,0,NULL);
+	struct TypeTableEntry* bool_type = TInstall(name,0, boolType,NULL);
 	
 	name = (char*)malloc(sizeof(char));
 	strcpy(name,"int");
-	struct TypeTableEntry* int_type = TInstall(name,1,NULL);
+	struct TypeTableEntry* int_type = TInstall(name,1, intType,NULL);
 	
 	name = (char*)malloc(sizeof(char));
 	strcpy(name,"string");
-	struct TypeTableEntry* str_type = TInstall(name,1,NULL);
+	struct TypeTableEntry* str_type = TInstall(name,1, stringType,NULL);
 	
 	null_type -> next = void_type;
 	void_type -> next = bool_type;
@@ -35,9 +35,10 @@ struct TypeTable* TypeTableCreate(){
 	
 }
 
-struct TypeTableEntry* TInstall(char* name,int size, struct FieldList* fl){
+struct TypeTableEntry* TInstall(char* name,int size, int nodetype, struct FieldList* fl){
 	struct TypeTableEntry* node = (struct TypeTableEntry*)malloc(sizeof(struct TypeTableEntry));
 	node -> type_name = name;
+	node -> nodetype = nodetype;
 	node -> fieldList = fl;
 	node -> size = size;
 	node -> next = NULL;
@@ -84,9 +85,24 @@ struct FieldList* FLookup(struct FieldList* fl, char* name){
 }
 
 
-void addToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name){
+void addTupleToTypeTable(struct TypeTable* table, struct ParamStruct* pt, char* type_name){ //only for tuple type
 	
-	struct TypeTableEntry* entry = TInstall(type_name,1, NULL);
+	struct FieldList* fl = makeFieldListFromParam(pt);
+	int size = calculateDtypeSize(fl,table);
+	
+	struct TypeTableEntry* entry = TInstall(type_name,size, tupleType,fl);
+	
+	struct TypeTableEntry* temp = table -> head;
+	while(temp -> next != NULL)
+		temp = temp -> next;
+		
+	temp -> next = entry;
+}
+
+
+void addUserDefToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name){ //only for user def type
+	
+	struct TypeTableEntry* entry = TInstall(type_name,1, userDefType, NULL);
 	
 	struct TypeTableEntry* temp = table -> head;
 	while(temp -> next != NULL)

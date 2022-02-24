@@ -1,0 +1,12 @@
+decl
+  tuple student(string name, int age) s1;        
+enddecl
+
+int main(){
+begin
+read(s1.name);
+read(s1.age);
+write(s1.name);
+write(s1.age);
+end
+}

@@ -1,6 +1,7 @@
 struct TypeTableEntry{
 	char* type_name;
 	int size;
+	int nodetype; 
 	struct FieldList* fieldList;
 	struct TypeTableEntry* next;
 };

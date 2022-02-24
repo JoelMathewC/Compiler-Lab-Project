@@ -62,11 +62,11 @@
 %type <no> program MainBlock FdefBlock Fdef 
 %type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid IdentifierDecl IdArrDecl GtypeDeclList GtypeDecl GtypeIdList
 %type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier IdArr StructId
-%type <string> Type
+%type <string> Type TupleType
 
 %token MAIN
 %token ID NUM STRING
-%token STR INT VOID NULL_TYPE
+%token STR INT VOID NULL_TYPE TUPLE
 %token PLUS MINUS STAR DIV MOD ASSIGN GT GTE LT LTE EQ NEQ ADDR AND OR
 %token START END ENDSTMT DECL ENDDECL TYPE ENDTYPE
 %token READ WRITE ALLOC INITIALIZE FREE
@@ -99,7 +99,7 @@ GtypeList : GtypeList Gtype				{}
 	| Gtype					{}
 	;
 
-Gtype : ID '{' GtypeDeclList '}'			{addToTypeTable(typeTable,$3,$<string>1);}
+Gtype : ID '{' GtypeDeclList '}'			{addUserDefToTypeTable(typeTable,$3,$<string>1);}
 	;
 
 GtypeDeclList : GtypeDeclList GtypeDecl		{$$ = makeDConnectorNode($1,$2);}
@@ -131,6 +131,10 @@ Type : INT				{$$ = $<string>1;}
 	| STR				{$$ = $<string>1;}
 	| VOID				{$$ = $<string>1;}
 	| ID				{$$ = $<string>1;}
+	| TupleType			{$$ = $<string>1;}
+	;
+	
+TupleType : TUPLE ID '(' ParamList ')'	{addTupleToTypeTable(typeTable,$4,$<string>2);$$ = $<string>2;}
 	;
 
 Gdecl : Type GidList ENDSTMT			{$$ = makeDatatypeNode($1,$2);}
@@ -347,7 +351,12 @@ void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
 	
 	while(node != NULL){ // loop through global symbol table
 		shape = node -> shape;
-		if(shape != NULL){
+		
+		if(node -> dtype -> nodetype == tupleType){
+			fprintf(fp,"MOV R1, %d\n",node -> binding);
+			fprintf(fp,"MOV [R1], %d\n", node -> binding + 1);
+		}
+		else if(shape != NULL){
 			
 			curr_mem = node -> binding;
 			index1 = 1;

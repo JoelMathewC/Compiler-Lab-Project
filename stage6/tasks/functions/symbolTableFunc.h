@@ -15,4 +15,4 @@ void printGlobalSymbolTable(struct GSymbolTable* gst);
 
 void printLocalSymbolTable(struct LSymbolTable* lst);
 
-int calculateMemory(struct ArrayShape* shape, int dim);
+int calculateMemory(struct ArrayShape* shape, int dim, struct TypeTableEntry* dtype);

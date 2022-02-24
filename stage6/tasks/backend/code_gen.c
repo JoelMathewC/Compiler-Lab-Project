@@ -1,4 +1,4 @@
-void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct ArrayDims* indices, struct ArrayShape* shape){// (dim_cur is current dim) and (dim_abs is dim in symbol table)
+void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct ArrayDims* indices){// (dim_cur is current dim) and (dim_abs is dim in symbol table)
 	struct ArrayDims* temp_i = indices;
 	int reg1;
 
@@ -50,7 +50,7 @@ if it recieves a tnode with
 		
 			case leaf_node: fprintf(fp,"MOV R%d, BP\n",reg);
 					fprintf(fp,"ADD R%d, %d\n",reg, t -> Lentry -> binding); //got the memory location of variable
-					dimResCodeGen(fp,reg,t -> dim,t -> Lentry -> dim, NULL, NULL);
+					dimResCodeGen(fp,reg,t -> dim,t -> Lentry -> dim, NULL);
 			
 					
 					// when its a user defined type
@@ -74,7 +74,7 @@ if it recieves a tnode with
 		switch(t -> nodetype){ //pointers and normal variables
 		
 			case leaf_node: fprintf(fp,"MOV R%d, %d\n",reg, t -> Gentry -> binding); //got the memory location of variable
-					dimResCodeGen(fp,reg,t -> dim,t -> Gentry -> dim, t -> indices, t -> Gentry -> shape);
+					dimResCodeGen(fp,reg,t -> dim,t -> Gentry -> dim, t -> indices);
 					
 					// When its a user defined type
 					temp = t -> left;
@@ -118,14 +118,16 @@ if it recieves a
 					}else{
 						if(t -> dim > 0){
 							fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
-							fprintf(fp,"ADD R%d, BP\n",reg);
+							if(t -> Lentry != NULL)
+								fprintf(fp,"ADD R%d, BP\n",reg);
 						}else{
-							if(strcmp(t -> dtype -> type_name,"int") == 0)
-								fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
-							else if(strcmp(t -> dtype -> type_name,"string") == 0)
+							
+							if(strcmp(t -> dtype -> type_name,"string") == 0)
 								fprintf(fp,"MOV R%d, %s\n",reg,t->val.str);
 							else if(strcmp(t -> dtype -> type_name,"null") == 0)
 								fprintf(fp,"MOV R%d, %d\n",reg,0);
+							else
+								fprintf(fp,"MOV R%d, %d\n",reg,t-> val.num);
 						}
 					}
 					break;

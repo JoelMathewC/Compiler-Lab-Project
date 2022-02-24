@@ -23,6 +23,30 @@ struct ParamStruct* makeParamStruct(char* name, char* dtype, int dim, struct Typ
 }
 
 
+struct FieldList* makeFieldListFromParam(struct ParamStruct* pt){
+	struct FieldList *fl, *tail, *head;
+	tail = NULL;
+	head = NULL;
+	
+	struct ParamStruct* temp = pt;
+	int i = 0;
+	while(temp != NULL){
+		fl = FInstall(temp -> name,temp -> dim, i, temp -> dtype);
+		
+		if(head == NULL){
+			head = fl;
+			tail = fl;
+		}else{
+			tail -> next = fl;
+			tail = fl;
+		}
+		i = i + 1;
+		temp = temp -> next;
+	}
+	return head;
+}
+
+
 struct ArgStruct* addArguments(struct ArgStruct* args,struct ArgStruct* node){
 	struct ArgStruct* temp = args;
 	if(temp == NULL){
