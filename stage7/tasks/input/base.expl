@@ -1,0 +1,21 @@
+class
+bst{
+decl
+int a;
+int b;
+enddecl
+}
+endclass
+decl
+  bst b;       
+enddecl
+
+int main(){
+decl
+int x;
+enddecl
+begin
+read(x);
+write(x);
+end
+}
