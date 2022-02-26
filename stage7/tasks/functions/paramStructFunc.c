@@ -49,12 +49,17 @@ struct FieldList* makeFieldListFromParam(struct ParamStruct* pt){
 }
 
 
-struct ArgStruct* addArguments(struct ArgStruct* args,struct ArgStruct* node){
+struct ArgStruct* addArguments(struct ArgStruct* args,struct ArgStruct* node, struct TypeTable* typeTable){
 	struct ArgStruct* temp = args;
 	if(temp == NULL){
 		args = node;
 	}else{
 		while(temp -> next != NULL){
+			temp = temp -> next;
+		}
+		
+		if(node -> arg -> ctype != NULL){
+			temp -> next = makeArgStruct(makeNumNode(4096 + (node -> arg -> ctype -> classIndex * 8),0,typeTable));
 			temp = temp -> next;
 		}
 		temp -> next = node;

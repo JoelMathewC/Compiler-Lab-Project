@@ -116,7 +116,12 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, str
 		case type_node: generateGlobalSymbolTable(gst, root -> left, TLookup(table,root -> type_name),table);
 				break;
 			
-		case leaf_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,NULL,leaf_node);
+		case leaf_node: if(strcmp(dtype -> type_name,"void") != 0)
+					GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,NULL,leaf_node);
+				else{
+					printf("Variable cannot be declared void");
+					exit(0);
+				}
 				break;
 				
 		case func_node: GlobalInstall(gst,root -> varname, dtype, root -> dim, root -> shape,root -> params,func_node);
@@ -138,7 +143,12 @@ void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, struct TypeT
 		case type_node: addLocalVarToLST(lst, root -> left, TLookup(table,root -> type_name),table);
 				break;
 			
-		case leaf_node: LocalInstall(lst,root -> varname, dtype,root -> dim,0);
+		case leaf_node: if(strcmp(dtype -> type_name,"void") != 0)
+					LocalInstall(lst,root -> varname, dtype,root -> dim,0);
+				else{
+					printf("Variable cannot be declared void");
+					exit(0);
+				}
 				break;
 				
 		case func_node:LocalInstall(lst,root -> varname, dtype,root -> dim,0);

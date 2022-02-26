@@ -1,21 +1,34 @@
 class
-bst{
+root{
 decl
 int a;
 int b;
+int add(int c);
 enddecl
+int add(int c){
+decl
+int r;
+enddecl
+begin
+r = self.a + self.b + c;
+return r;
+end
+}
 }
 endclass
 decl
-  bst b;       
+root r;
 enddecl
-
 int main(){
 decl
 int x;
 enddecl
 begin
-read(x);
+x = initialize();
+r = alloc();
+r.a = 1;
+r.b = 2;
+x = r.add(3);
 write(x);
 end
 }

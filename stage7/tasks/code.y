@@ -44,10 +44,15 @@
 	struct LSymbolTable* lst;
 	struct TypeTable* typeTable;
 	struct ClassTable* classTable;
-	FILE* startCodeGen(int memLoc, struct GSymbolTable* gst);
-	void endCodeGen(FILE *fp);
-	void setMemLocationValues(struct GSymbolTable* gst,FILE* fp);
+	
+	
+	void startCodeGen(FILE* fp, int memLoc, struct GSymbolTable* gst, struct ClassTable* classTable);
+	FILE* openFile();
 	FILE *fp;
+	
+	char* currentClass;
+	void endCodeGen(FILE *fp);
+	void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable, FILE* fp);
 %}
 
 %union{
@@ -66,7 +71,7 @@
 %type <no> program MainBlock FdefBlock Fdef 
 %type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid IdentifierDecl IdArrDecl GtypeDeclList GtypeDecl GtypeIdList GclassDeclBlock GclassAttrDeclList GclassAttrDecl GclassIdList GclassFuncDeclList GclassFuncDecl GclassFuncName
 %type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier IdArr StructId
-%type <string> Type TupleType
+%type <string> Type TupleType FuncRetType LocalType
 
 %token MAIN
 %token ID NUM STRING
@@ -87,19 +92,19 @@
 
 %%
 
-program : GclassBlock GtypeBlock GdeclBlock FdefBlock MainBlock	{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GclassBlock GtypeBlock GdeclBlock MainBlock			{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GclassBlock GdeclBlock FdefBlock MainBlock			{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GclassBlock GdeclBlock MainBlock				{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GtypeBlock GdeclBlock FdefBlock MainBlock			{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GtypeBlock GdeclBlock MainBlock				{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GtypeBlock MainBlock						{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GdeclBlock FdefBlock MainBlock				{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| GdeclBlock MainBlock						{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
-	| MainBlock							{fprintf(fp,"EXIT:\n"); endCodeGen(fp);}
+program : GtypeBlock GclassBlock GdeclBlock FdefBlock MainBlock	{}
+	| GtypeBlock GclassBlock GdeclBlock MainBlock			{}
+	| GclassBlock GdeclBlock FdefBlock MainBlock			{}
+	| GclassBlock GdeclBlock MainBlock				{}
+	| GtypeBlock GdeclBlock FdefBlock MainBlock			{}
+	| GtypeBlock GdeclBlock MainBlock				{}
+	| GtypeBlock MainBlock						{}
+	| GdeclBlock FdefBlock MainBlock				{}
+	| GdeclBlock MainBlock						{}
+	| MainBlock							{}
 	;
 	
-GclassBlock : CLASS GclassList ENDCLASS			{printClassTable(classTable);}
+GclassBlock : CLASS GclassList ENDCLASS			{/*printClassTable(classTable);*/printf("CLASS DONE\n");}
 	| CLASS ENDCLASS					{}
 	;
 
@@ -107,12 +112,22 @@ GclassList : GclassList Gclass				{}
 	| Gclass						{}
 	;
 
-Gclass : ID '{' GclassDeclBlock GclassFuncDefBlock '}'			{
-											addToClassTable(classTable, typeTable, $3, $<string>1);
-											
-										}
-	| ID '{' GclassDeclBlock '}'						{addToClassTable(classTable, typeTable, $3, $<string>1);}
+Gclass : ClassName '{' GclassDeclBlockSeg GclassFuncDefBlock '}'		{}
+	| ClassName '{' GclassDeclBlockSeg '}'				{}
 	;
+	
+ClassName : ID									{
+											currentClass = strdup($<string>1);
+											$<string>$ = $<string>1;
+										}
+	;
+
+GclassDeclBlockSeg : GclassDeclBlock						{	
+											getMemLoc(8);
+											addToClassTable(classTable, typeTable, $1, currentClass);
+
+										}
+			;
 
 GclassDeclBlock : DECL GclassAttrDeclList GclassFuncDeclList ENDDECL		{$$ = makeDConnectorNode($2,$3);}
 		| DECL GclassFuncDeclList ENDDECL				{$$ = makeDConnectorNode(NULL,$2);}
@@ -144,13 +159,24 @@ GclassFuncDefBlock : GclassFuncDefBlock GclassFuncDef		{}
 	| GclassFuncDef						{}
 	;
 
-GclassFuncDef : FName '{' LdeclBlock START Slist END '}'		{	
-										//TODO: CODE GEN and adding self to lst
+GclassFuncDef : MName '{' LdeclBlock START Slist END '}'		{	
+										
+										struct ClassTableEntry* entry = CLookup(classTable,currentClass);
+										struct MethodList* method = MLookup(entry -> methodList,$<string>1);
+										funcCodeGen($5, fp,method -> flabel);
 										lst = NULL;
 									}
 	;
+
+MName : Type ID '(' ParamList ')'			{	
+								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
+								verifyMethodHead($<string>2,$4,TLookup(typeTable,$<string>1),CLookup(classTable,currentClass));
+								addMethodParamToLST(lst,$4,CLookup(classTable,currentClass));
+								$<string>$ = $<string>2;
+							}
+	;
 	
-GtypeBlock : TYPE GtypeList ENDTYPE			{}
+GtypeBlock : TYPE GtypeList ENDTYPE			{printf("TYPE DONE\n");}
 	| TYPE ENDTYPE					{}
 	;
 
@@ -176,7 +202,7 @@ GtypeIdList : GtypeIdList ',' ID			{$$ = makeDConnectorNode($1,declIdNode($<stri
 GdeclBlock : DECL GdeclList ENDDECL 	{	
 						gst = (struct GSymbolTable*)malloc(sizeof(struct GSymbolTable));
 						generateGlobalSymbolTable(gst,$2,NULL,NULL,typeTable,classTable);
-						fp = startCodeGen(memLoc,gst);
+						startCodeGen(fp,memLoc,gst,classTable);
 						//printGlobalSymbolTable(gst);
 					}
 	| DECL ENDDECL			{gst = NULL;}
@@ -226,12 +252,18 @@ Fdef : FName '{' LdeclBlock START Slist END '}'		{
 								}
 	;
 
-FName : Type ID '(' ParamList ')'			{
+FName : FuncRetType ID '(' ParamList ')'			{
 								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
 								verifyFuncHead(gst,$<string>2,TLookup(typeTable,$<string>1),CLookup(classTable,$<string>1),$4);
 								addParamToLST(lst,$4);
 								$<string>$ = $<string>2;
 							}
+	;
+
+FuncRetType : INT				{$$ = $<string>1;}
+	| STR				{$$ = $<string>1;}
+	| VOID				{$$ = $<string>1;}
+	| ID				{$$ = $<string>1;}
 	;
 
 ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
@@ -245,7 +277,7 @@ Param : Type ID					{$$ = makeParamStruct($<string>2,$<string>1,0,typeTable,clas
 	 
 MainBlock :  MainHeader '{' LdeclBlock START Slist END'}'	{	
 									if(gst == NULL){
-										fp = startCodeGen(-1,gst);	
+										startCodeGen(fp,-1,gst,classTable);	
 										fprintf(fp,"MOV SP, %d\n",memLoc); //statically allocates global variable space
 									}
 									funcCodeGen($5, fp,-1);}
@@ -266,9 +298,14 @@ LdeclList : LdeclList Ldecl			{$$ = makeDConnectorNode($1,$2);}
 	| Ldecl				{$$ = $1;}
 	;
 	
-Ldecl : Type LidList ENDSTMT		{$$ = makeDatatypeNode($1,$2);}
+Ldecl : LocalType LidList ENDSTMT		{$$ = makeDatatypeNode($1,$2);}
 	;
 	
+LocalType : INT				{$$ = $<string>1;}
+	| STR					{$$ = $<string>1;}
+	| ID					{$$ = $<string>1;}
+	;
+
 LidList : LidList ',' Lid		{$$ = makeDConnectorNode($1,$3);}
 	| Lid				{$$ = $1;}
 	;
@@ -294,6 +331,8 @@ Stmt:	InputStmt							{$$ = $1;}
 	| CONTINUE ENDSTMT						{$$ = makeJumpNode(continue_node);}
 	| ID '(' ')' ENDSTMT						{$$ = makeFuncNode($<string>1,gst,NULL);}
 	| ID '(' ArgList ')' ENDSTMT					{$$ = makeFuncNode($<string>1,gst,$3);}
+	| StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
+	| StructId '.' ID '(' ArgList ')'				{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
 	| RETURN expr ENDSTMT						{$$ = makeReturnNode($2);}
 	;
 	
@@ -340,20 +379,21 @@ expr : expr PLUS expr							{$$ = makeOperatorNode(add,$1,$3,typeTable);}
 	 | ALLOC '(' ')'						{$$ = makeAllocNode();}
 	 | INITIALIZE '(' ')'						{$$ = makeMemInitNode(typeTable);}
 	 | FREE '(' Identifier ')'					{$$ = makeFreeNode($3,typeTable);}
+	 | StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
+	 | StructId '.' ID '(' ArgList ')'				{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
 	 ;
 	 
-ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3));}
+ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3),typeTable);}
 	| expr				{$$ = makeArgStruct($1);}
 	;
 	
-Identifier : IdArr			{$$ = $1;}
-	| STAR '(' expr ')'		{$$ = makePtrNode($3,typeTable);}
+Identifier : STAR '(' expr ')'		{$$ = makePtrNode($3,typeTable);}
 	| STAR Identifier		{$$ = makePtrNode($2,typeTable);}
 	| StructId			{$$ = $1;}
 	;
 
 StructId : StructId '.' ID			{$$ = extendTypeNode($1,$<string>3,typeTable,classTable);}
-	| IdArr '.' ID				{$$ = extendTypeNode($1,$<string>3,typeTable,classTable);}
+	| IdArr				{$$ = $1;}
 	;
 
 IdArr : IdArr '[' expr ']'			{$$ = makeIdNode($1 -> varname,gst,lst,addArrayDim($1 -> indices,$3),typeTable,classTable);}
@@ -368,12 +408,16 @@ void yyerror(char const *s)
     exit(0);
 }
 
-FILE* startCodeGen(int memLoc, struct GSymbolTable* gst){
+FILE* openFile(){
+	FILE *fp = fopen("output/output.out","w");
+	fprintf(fp,"0\nGEN\n0\n0\n0\n0\n0\n0\n");
+	return fp;
+}
+
+void startCodeGen(FILE* fp, int memLoc, struct GSymbolTable* gst, struct ClassTable* classTable){
 	int label1 = getLabel();
 	
-	FILE *fp = fopen("output/output.out","w");
-	fprintf(fp,"0\n2056\n0\n0\n0\n0\n0\n0\n");
-	
+	fprintf(fp,"GEN:\n");
 	//to shift the SP and fill it with 0
 	fprintf(fp,"MOV R2, SP\n");
 	if(memLoc > 0){
@@ -389,33 +433,59 @@ FILE* startCodeGen(int memLoc, struct GSymbolTable* gst){
 	fprintf(fp,"ADD SP, 1\n"); //allocate space for return from main
 	
 	if(gst != NULL)
-		setMemLocationValues(gst,fp);
+		setMemLocationValues(gst,classTable,fp);
 	fprintf(fp, "CALL MAIN\n");
 	fprintf(fp,"CALL EXIT\n");
-	return fp;
+
 }
 
 void endCodeGen(FILE *fp){
+	fprintf(fp,"EXIT:\n");
 	lib_code_gen(end,0,fp);
 	fclose(fp);
 }
 
-void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
+void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable, FILE* fp){
 	reg_index reg1;
 	int curr_mem = 0;
 	struct Gsymbol* node = gst -> head;
 	struct ArrayShape *shape;
 	int index1,index2,temp,endFrame;
 	
+	struct ClassTableEntry* classEntry;
+	struct MethodList* method;
+	int func_num = 0;
+	
+	if(classTable != NULL){
+		classEntry = classTable -> head;
+		while(classEntry != NULL){
+			method = classEntry -> methodList;
+			func_num = 0;
+			
+			while(method != NULL){
+				fprintf(fp,"MOV R1, %d\n",4096+func_num);
+				fprintf(fp,"MOV [R1], F%d\n",method -> flabel);
+				method = method -> next;
+				++func_num;
+			}
+			while(func_num == 0 || func_num % 8 != 0){
+				fprintf(fp,"MOV R1, %d\n",4096+func_num);
+				fprintf(fp,"MOV [R1], -1\n");
+				++func_num;
+			}
+			
+			classEntry = classEntry -> next;
+		}
+	}
 	
 	while(node != NULL){ // loop through global symbol table
 		shape = node -> shape;
 		
-		if(node -> dtype -> nodetype == tupleType){
+		if(node -> dtype != NULL && node -> dtype -> nodetype == tupleType){
 			fprintf(fp,"MOV R1, %d\n",node -> binding);
 			fprintf(fp,"MOV [R1], %d\n", node -> binding + 1);
 		}
-		else if(shape != NULL){
+		else if(node -> dtype != NULL && shape != NULL){
 			
 			curr_mem = node -> binding;
 			index1 = 1;
@@ -436,6 +506,9 @@ void setMemLocationValues(struct GSymbolTable* gst,FILE* fp){
 				shape = shape -> next;
 
 			}
+		}else if(node -> ctype != NULL){
+			fprintf(fp,"MOV R1, %d\n",node -> binding + 1); //address of func ptr
+			fprintf(fp,"MOV [R1], %d\n", 4096 + (node -> ctype -> classIndex * 8));
 		}
 		node = node -> next;
 	}
@@ -454,7 +527,10 @@ int main(int argc, char* argv[]) {
 	}
 	
 	typeTable = TypeTableCreate();
+	classTable = ClassTableCreate();
+	fp = openFile();
 	yyparse();
+	endCodeGen(fp);
 	
 	if(input_fp)
 		fclose(input_fp);

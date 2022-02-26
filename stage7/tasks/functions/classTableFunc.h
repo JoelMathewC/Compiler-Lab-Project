@@ -12,6 +12,8 @@ void generateClassAttrList(struct ClassTableEntry* class_entry, struct dnode* ro
 
 void printClassTable(struct ClassTable* table);
 
+void verifyMethodHead(char* name, struct ParamStruct* params, struct TypeTableEntry* return_type, struct ClassTableEntry* ctype);
+
 
 //--------------------------------------- ATTR FUNC ----------------------------------------------
 

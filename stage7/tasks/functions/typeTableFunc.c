@@ -185,13 +185,31 @@ struct FieldList* FInstall(char* varname, int dim, int fieldIndex, struct TypeTa
 
 void addToFieldList(struct TypeTableEntry* entry, struct FieldList* new_node){
 	struct FieldList* temp = entry -> fieldList;
+	int count = 0;
+	
 	if(entry -> fieldList == NULL)
 		entry -> fieldList = new_node;
 	else{
-		while(temp -> next != NULL)
+		while(temp -> next != NULL){
+			++count;
+			if(strcmp(temp -> varname, new_node -> varname) == 0){
+				printf("Error: Two member fields with the same name (%s)",temp -> varname);
+				exit(0);
+			}
 			temp = temp -> next;
+		}
 		
-		temp -> next = new_node;
+		if(strcmp(temp -> varname, new_node -> varname) == 0){
+				printf("Error: Two member fields with the same name (%s)",temp -> varname);
+				exit(0);
+		}
+		
+		if(count >= 8){
+			printf("Member attribute count for %s is exceeding Limit(8)",entry -> type_name);
+			exit(0);
+		}
+		else
+			temp -> next = new_node;
 	}
 }
 

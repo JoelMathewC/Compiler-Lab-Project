@@ -32,7 +32,7 @@ struct Lsymbol* LocalLookup(struct LSymbolTable* lst, char* name){
 void GlobalInstall(struct GSymbolTable* gst, char* name, int dim, int nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayShape* shape, struct ParamStruct* params){
 	struct Gsymbol* elem = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
 	
-	if(dtype -> nodetype == tupleType && shape != NULL){ //to not permit arrays of tuples
+	if(dtype != NULL && dtype -> nodetype == tupleType && shape != NULL){ //to not permit arrays of tuples
 		printf("Error: Arrays of Tuples not permitted");
 		exit(0);
 	}
@@ -84,9 +84,14 @@ void LocalInstall(struct LSymbolTable* lst, char* name, int dim,int paramLoc, st
 	elem -> dim = dim;
 	elem -> next = NULL;
 	
-	if(paramLoc == 0) //local var
-		elem -> binding = getLocalMemLoc();
-	else
+	if(paramLoc == 0){ //local var
+		if(ctype != NULL){
+			elem -> binding = getLocalMemLoc();
+			getLocalMemLoc(); // to store virtual function table ptr
+		}else{
+			elem -> binding = getLocalMemLoc();
+		}
+	}else
 		elem -> binding = paramLoc;
 
 	struct Lsymbol* temp = lst -> head;
@@ -118,7 +123,12 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, str
 		case type_node: generateGlobalSymbolTable(gst, root -> left, TLookup(typeTable,root -> type_name), CLookup(classTable,root -> type_name),typeTable, classTable);
 				break;
 
-		case leaf_node: GlobalInstall(gst,root -> varname, root -> dim, leaf_node, dtype, ctype, root -> shape, NULL);
+		case leaf_node: if(dtype != NULL && strcmp(dtype -> type_name, "void") == 0){
+					printf("Error: Variable of void type cannot be created");
+					exit(0);
+				}
+				else
+					GlobalInstall(gst,root -> varname, root -> dim, leaf_node, dtype, ctype, root -> shape, NULL);
 				break;
 				
 		case func_node: GlobalInstall(gst,root -> varname, root -> dim, func_node, dtype, ctype, root -> shape, root -> params);
@@ -140,7 +150,12 @@ void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, struct TypeT
 		case type_node: addLocalVarToLST(lst, root -> left, TLookup(typeTable,root -> type_name),CLookup(classTable,root -> type_name),typeTable, classTable);
 				break;
 			
-		case leaf_node: LocalInstall(lst,root -> varname, root -> dim,0, dtype, ctype);
+		case leaf_node: if(dtype != NULL && strcmp(dtype -> type_name, "void") == 0){
+					printf("Error: Variable cannot be of void type");
+					exit(0);
+				}
+				else	 
+					LocalInstall(lst,root -> varname, root -> dim,0, dtype, ctype);
 				break;
 				
 		case func_node:LocalInstall(lst,root -> varname,root -> dim,0,dtype,ctype);
@@ -154,6 +169,9 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	int len = -3;
 	
 	while(temp_p != NULL){
+		if(pt -> ctype != NULL){ // for ctype
+			--len;
+		}
 		LocalInstall(lst,temp_p -> name, temp_p -> dim,len, temp_p -> dtype, temp_p -> ctype);
 		temp_p = temp_p -> next;
 		--len;
@@ -161,7 +179,25 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	
 }
 
+void addMethodParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt, struct ClassTableEntry* ctype){
+	struct ParamStruct* temp_p = pt;
+	int len = -3;
+	
+	while(temp_p != NULL){
+		if(pt -> ctype != NULL){ // for ctype
+			--len;
+		}
+		LocalInstall(lst,temp_p -> name, temp_p -> dim,len, temp_p -> dtype, temp_p -> ctype);
+		temp_p = temp_p -> next;
+		--len;
+	}
+	
+	LocalInstall(lst,"self", 0,len-1, NULL, ctype); //len-1 to create 2 spaces to store pointer to attrlist and pointer to methodList
+	
+}
+
 void verifyFuncHead(struct GSymbolTable* gst, char* name, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ParamStruct* params){
+	
 	struct Gsymbol* Gentry = GlobalLookup(gst,name);
 	
 	if(Gentry == NULL){
@@ -221,6 +257,15 @@ void printLocalSymbolTable(struct LSymbolTable* lst){
 
 
 int calculateMemory(struct ArrayShape* shape, int dim, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype){
+	
+	if(ctype != NULL & dim > 0){
+		printf("Error: Arrays of classes not permitted");
+		exit(0);
+	}
+	else if(ctype != NULL){
+		return 2;
+	}
+	
 	if(dtype != NULL && dtype -> nodetype == tupleType){ //because tuple is a special type we are making it as a seperate type
 		
 		if(dim == 0) return dtype -> size + 1; //actual value
@@ -249,5 +294,8 @@ int calculateMemory(struct ArrayShape* shape, int dim, struct TypeTableEntry* dt
 		mem = mem+1; //location for the real base of an n-dimensional array
 		return mem;
 	}
+	
+	printf("Error: Calculate Memory called incorrectly");
+	exit(0);
 		
 }

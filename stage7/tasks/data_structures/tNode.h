@@ -11,6 +11,7 @@ struct tnode {
 	
 	struct FieldList* fieldRef;	//reference to field in case of user defined types
 	struct AttrList* attrRef; //reference to attribute in case of classes
+	struct MethodList* methodRef;
 	
 	struct ClassTableEntry* ctype;
 	struct TypeTableEntry* dtype;

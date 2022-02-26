@@ -4,7 +4,7 @@ struct ParamStruct* makeParamStruct(char* name, char* type, int dim, struct Type
 
 struct FieldList* makeFieldListFromParam(struct ParamStruct* pt);
 
-struct ArgStruct* addArgument(struct ArgStruct* args, struct ArgStruct* node);
+struct ArgStruct* addArguments(struct ArgStruct* args,struct ArgStruct* node, struct TypeTable* typeTable);
 
 struct ArgStruct* makeArgStruct(struct tnode* expr);
 

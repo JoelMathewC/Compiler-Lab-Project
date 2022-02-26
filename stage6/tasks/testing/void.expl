@@ -1,0 +1,16 @@
+decl
+int *a;
+enddecl
+
+int main(){
+decl
+int b;
+void s;
+enddecl
+begin
+	b = 2;
+	a = &b;
+	read(b);
+	write(*a);
+end
+}

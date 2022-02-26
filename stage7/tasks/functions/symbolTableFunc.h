@@ -11,6 +11,10 @@ void generateGlobalSymbolTable(struct GSymbolTable* gst, struct dnode* root, str
 
 void addLocalVarToLST(struct LSymbolTable* lst, struct dnode* root, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct TypeTable* typeTable, struct ClassTable* classTable);
 
+void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt);
+
+void addMethodParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt, struct ClassTableEntry* ctype);
+
 void printGlobalSymbolTable(struct GSymbolTable* gst);
 
 void printLocalSymbolTable(struct LSymbolTable* lst);

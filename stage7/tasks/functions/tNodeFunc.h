@@ -5,13 +5,15 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct FieldList* fieldRef,struct AttrList* attrRef, struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct FieldList* fieldRef,struct AttrList* attrRef, struct MethodList* methodRef, struct tnode *l, struct tnode *r);
 
 struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct ArrayDims* indices, struct TypeTable* typeTable, struct ClassTable* classTable);
 
 struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable, struct ClassTable* classTable);
 
 struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* args);
+
+struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct ArgStruct* args, struct TypeTable* typeTable);
 
 struct tnode* makeNumNode(int n, int dim, struct TypeTable* table);
 

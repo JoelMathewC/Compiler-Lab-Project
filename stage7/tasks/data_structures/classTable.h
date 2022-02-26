@@ -1,6 +1,6 @@
 struct ClassTableEntry{
 	char* class_name;
-	int classIndex;
+	int classIndex;  // binding of virtual function table location will be 4096 + (classIndex + 8)
 	int attrCount;
 	int methodCount;
 	struct ClassTableEntry* parent;
@@ -16,6 +16,7 @@ struct ClassTable{
 struct MethodList{
 	char* method_name;
 	int methodIndex;
+	int flabel;
 	
 	struct ParamStruct* params;
 	struct TypeTableEntry* dtype; //return can only be from type Table
