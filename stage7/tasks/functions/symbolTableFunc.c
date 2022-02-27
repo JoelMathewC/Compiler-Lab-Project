@@ -169,7 +169,7 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	int len = -3;
 	
 	while(temp_p != NULL){
-		if(pt -> ctype != NULL){ // for ctype
+		if(temp_p -> ctype != NULL){ // for ctype
 			--len;
 		}
 		LocalInstall(lst,temp_p -> name, temp_p -> dim,len, temp_p -> dtype, temp_p -> ctype);
@@ -179,12 +179,12 @@ void addParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt){
 	
 }
 
-void addMethodParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt, struct ClassTableEntry* ctype){
+void addMethodParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt, struct ClassTableEntry* ctype){//TODO: is never getting called
 	struct ParamStruct* temp_p = pt;
 	int len = -3;
 	
 	while(temp_p != NULL){
-		if(pt -> ctype != NULL){ // for ctype
+		if(temp_p -> ctype != NULL){ // for ctype
 			--len;
 		}
 		LocalInstall(lst,temp_p -> name, temp_p -> dim,len, temp_p -> dtype, temp_p -> ctype);

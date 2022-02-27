@@ -115,7 +115,7 @@ int x,in,val;
 enddecl
 begin
 x=initialize();
-obj = alloc();
+obj = new(bstclass);
 x=obj.init();
 read(val);
 Root = obj.getroot();

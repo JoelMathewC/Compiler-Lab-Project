@@ -9,7 +9,7 @@ void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct Arr
 			reg1 = getReg();
 			
 			fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-			oper_code_gen(temp_i -> node,fp,reg1,False);
+			oper_code_gen(temp_i -> node,fp,reg1);
 			fprintf(fp,"ADD R%d, R%d\n",reg,reg1);
 			
 			freeReg();
@@ -25,7 +25,7 @@ void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct Arr
 }
 
 
-int getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg, boolean findParent){ 
+int getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg, boolean findParentOfMethod){ 
 /*
 if it recieves a tnode with
 	
@@ -63,14 +63,13 @@ if it recieves a tnode with
 							temp = temp -> left;
 						}
 						else if(temp -> nodetype == func_node){
-							if(findParent == True) //in the case they are trying to find the parent of a func
-								return leaf_node;
+							if(findParentOfMethod == True) //in the case they are trying to find the parent of a func
+								return func_node;
 							
-							method = MLookup(temp -> methodRef, temp -> varname);
+							
 							fprintf(fp,"ADD R%d, 1\n",reg);
 							fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-							fprintf(fp,"ADD R%d, %d\n",reg,method -> methodIndex);
-							functionCallerCode(fp,-1,temp -> args,True,reg);
+							fprintf(fp,"ADD R%d, %d\n",reg,temp -> methodRef -> methodIndex);
 							return func_node;
 						}
 					}
@@ -99,14 +98,12 @@ if it recieves a tnode with
 							temp = temp -> left;
 						}
 						else if(temp -> nodetype == func_node){
-							if(findParent == True) //in the case they are trying to find the parent of a func
-								return leaf_node;
+							if(findParentOfMethod == True) //in the case they are trying to find the parent of a func
+								return func_node;
 							
-							method = MLookup(temp -> methodRef, temp -> varname);
 							fprintf(fp,"ADD R%d, 1\n",reg);
 							fprintf(fp,"MOV R%d, [R%d]\n",reg,reg);
-							fprintf(fp,"ADD R%d, %d\n",reg,method -> methodIndex);
-							functionCallerCode(fp,-1,temp -> args,True,reg);
+							fprintf(fp,"ADD R%d, %d\n",reg,temp -> methodRef -> methodIndex);
 							return func_node;
 						}
 					}
@@ -117,14 +114,14 @@ if it recieves a tnode with
 		}
 	}
 	else if(t -> nodetype == ptr_node){
-		oper_code_gen(t -> left,fp,reg,False);
+		oper_code_gen(t -> left,fp,reg);
 	}
 	
 	return leaf_node;
 }
 
 
-void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg, boolean findParent){ 
+void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg){ 
 
 /*
 
@@ -138,16 +135,22 @@ if it recieves a
 
 	reg_index reg1;
 	int nodetype;
+	struct tnode* temp;
 	
 	switch(t -> nodetype){
 		
 		case leaf_node: 	if(t -> varname != NULL){
-						nodetype = getVarMemLoc(t,fp,reg,findParent);
-						
-						if(nodetype == leaf_node)
+						nodetype = getVarMemLoc(t,fp,reg,False);
+						if(nodetype == leaf_node){
 							fprintf(fp,"MOV R%d, [R%d]\n",reg, reg);
-						else
+						}else{
+							temp = t;
+							while(t -> nodetype != func_node)
+								t = t -> left;
+							
+							functionCallerCode(fp,-1,t -> args,True,reg);
 							fprintf(fp,"MOV R%d, R0\n",reg);
+						}
 						
 					}else{
 						if(t -> dim > 0){
@@ -166,15 +169,23 @@ if it recieves a
 					}
 					break;
 					
-		case alloc_node:	codeGen(t, fp, NULL);
+					
+		case type_alloc_node:	lib_code_gen(type_alloc_node,-1,fp);
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 		
-		case free_node:	codeGen(t, fp, NULL);
+		case class_alloc_node:	lib_code_gen(class_alloc_node,-1,fp);
+					fprintf(fp,"MOV R%d, R0\n",reg);
+					break;
+		
+		case free_node:	reg1 = getReg();
+					oper_code_gen(t->left,fp,reg1);
+					lib_code_gen(free_node,reg1,fp);
+					freeReg();
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 				
-		case mem_init_node:	codeGen(t, fp, NULL);
+		case mem_init_node:	lib_code_gen(mem_init_node,-1,fp);
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 					
@@ -182,13 +193,13 @@ if it recieves a
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 					
-		case ptr_node: 	oper_code_gen(t -> left,fp,reg,False);
+		case ptr_node: 	oper_code_gen(t -> left,fp,reg);
 					fprintf(fp,"MOV R%d, [R%d]\n",reg, reg);
 					break;
 		default:		
-					oper_code_gen(t->left,fp,reg,False);
+					oper_code_gen(t->left,fp,reg);
 					reg1 = getReg(); //allocated register
-					oper_code_gen(t->right,fp,reg1,False);
+					oper_code_gen(t->right,fp,reg1);
 					
 					switch(t -> nodetype){
 						
@@ -254,8 +265,8 @@ void lib_code_gen(int func, int reg, FILE *fp){
 
 	//reg: for read - register storing location (and) for write - register storing value
 	//	for free - register storing address of location to be freed
-	
-	for(int i=1; i<=reg_num; ++i){
+	int temp_reg_num = reg_num;
+	for(int i=1; i<=temp_reg_num; ++i){
 		fprintf(fp,"PUSH R%d\n",i);
 	}
 
@@ -293,8 +304,9 @@ void lib_code_gen(int func, int reg, FILE *fp){
 					fprintf(fp,"PUSH R0\n");
 					break;
 		
-		//Alloc	
-		case alloc_node:	fprintf(fp,"MOV R0,\"Alloc\"\n");
+		//Alloc
+		case class_alloc_node:	
+		case type_alloc_node:	fprintf(fp,"MOV R0,\"Alloc\"\n");
 					fprintf(fp,"PUSH R0\n");
 					fprintf(fp,"PUSH R0\n");
 					fprintf(fp,"PUSH R0\n");
@@ -331,16 +343,17 @@ void lib_code_gen(int func, int reg, FILE *fp){
 	fprintf(fp,"POP R1\n");
 	fprintf(fp,"POP R1\n");
 	
-	for(int i=reg_num; i>0; --i){
+	for(int i=temp_reg_num; i>0; --i){
 		fprintf(fp,"POP R%d\n",i);
 	}
+	reg_num = temp_reg_num;
 
 }
 
 //Main Code Generation Function
 void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 
-	reg_index reg1, reg2;
+	reg_index reg1, reg2, reg3;
 	int label1 = -1,label2 = -1,label3 = -1, label4 = -1;
 	int nodetype;
 	
@@ -366,32 +379,25 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			
 		//write lib call
 		case write: 	reg1 = getReg();
-				oper_code_gen(t->left,fp,reg1,False);
+				oper_code_gen(t->left,fp,reg1);
 				lib_code_gen(write,reg1,fp);
 				freeReg();
 			break;
 		
-		//Initialize
-		case mem_init_node:	lib_code_gen(mem_init_node,-1,fp);
-			break;
-			
-		//Alloc
-		case alloc_node:	lib_code_gen(alloc_node,-1,fp);
-			break;
-		
-		//free
-		case free_node: 	reg1 = getReg();
-					oper_code_gen(t->left,fp,reg1,False);
-					lib_code_gen(free_node,reg1,fp);
-					freeReg();
-			break;
-		
 		//assignment (=)
 		case assign: 	reg1 = getReg();
-				oper_code_gen(t->right,fp,reg1,False);
+				oper_code_gen(t->right,fp,reg1);
 				
 				reg2 = getReg();
 				getVarMemLoc(t -> left,fp,reg2,False); //cannot be func_node
+				
+				if(t -> right -> nodetype == class_alloc_node){
+					reg3 = getReg();
+					fprintf(fp,"MOV R%d, R%d\n",reg3,reg2);
+					fprintf(fp,"ADD R%d, 1\n",reg3); //to get virtual func table ptr
+					fprintf(fp,"MOV [R%d], %d\n",reg3, 4096 + (t -> right -> ctype -> classIndex * 8));
+					freeReg();
+				}
 				
 				fprintf(fp,"MOV [R%d], R%d\n",reg2, reg1);
 				freeReg();
@@ -406,13 +412,12 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			}
 			else{
 				reg1 = getReg();
-				oper_code_gen(t -> left,fp,reg1,False);
+				oper_code_gen(t -> left,fp,reg1);
 				label1 = getLabel();
 				fprintf(fp,"JZ R%d, L%d\n",reg1,label1);
 				freeReg();
 			}
-			codeGen(t -> right -> left,fp,lp);
-			
+			codeGen(t -> right -> left,fp,lp); 
 			if(t -> right -> right != NULL){ // else condition exists
 				label2 = getLabel(); 
 				fprintf(fp,"JMP L%d\n",label2);
@@ -422,7 +427,6 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			
 			label2 = label2 > label1 ? label2 : label1;
 			fprintf(fp,"L%d:\n",label2);
-			
 			break;
 		
 		//while
@@ -435,7 +439,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			fprintf(fp,"L%d:\n",label3);
 			
 			reg1 = getReg();
-			oper_code_gen(t -> left,fp,reg1,False);
+			oper_code_gen(t -> left,fp,reg1);
 			fprintf(fp,"JZ R%d, L%d\n",reg1,label4);
 			codeGen(t -> right,fp,lp);
 			fprintf(fp,"JMP L%d\n",label3);
@@ -456,7 +460,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			codeGen(t -> right,fp,lp);
 			
 			reg1 = getReg();
-			oper_code_gen(t -> left,fp,reg1,False);
+			oper_code_gen(t -> left,fp,reg1);
 			fprintf(fp,"JZ R%d, L%d\n",reg1,label4);
 			fprintf(fp,"JMP L%d\n",label3);
 			fprintf(fp,"L%d:\n",label4);
@@ -481,7 +485,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		
 		case return_node:
 			reg1 = getReg();
-			oper_code_gen(t -> left,fp,reg1,False);
+			oper_code_gen(t -> left,fp,reg1);
 			
 			reg2 = getReg();
 			fprintf(fp,"MOV R%d, BP\n",reg2);
@@ -500,7 +504,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 					codeGen(t -> left,fp,lp);
 				}else{
 					reg1 = getReg();
-					oper_code_gen(t -> left,fp,reg1,False);
+					oper_code_gen(t -> left,fp,reg1);
 					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num);
 					freeReg();
 				}
@@ -509,7 +513,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 					codeGen(t -> right,fp,lp);
 				}else{
 					reg1 = getReg();
-					oper_code_gen(t -> right,fp,reg1,False);
+					oper_code_gen(t -> right,fp,reg1);
 					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num);
 					freeReg();
 				}
@@ -521,7 +525,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 					codeGen(t -> left,fp,lp);
 				}else{
 					reg1 = getReg();
-					oper_code_gen(t -> left,fp,reg1,False);
+					oper_code_gen(t -> left,fp,reg1);
 					fprintf(fp,"JNZ R%d, L%d\n",reg1,label1);
 					freeReg();
 				}
@@ -530,7 +534,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 					codeGen(t -> right,fp,lp);
 				}else{
 					reg1 = getReg();
-					oper_code_gen(t -> right,fp,reg1,False);
+					oper_code_gen(t -> right,fp,reg1);
 					label2 = getLabel();
 					fprintf(fp,"JZ R%d, L%d\n",reg1,label_num-1);
 					freeReg();
@@ -541,7 +545,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		
 		default: 	
 				reg1 = getReg();
-				oper_code_gen(t,fp,reg1,False);
+				oper_code_gen(t,fp,reg1);
 				freeReg();
 	
 	}
@@ -570,12 +574,19 @@ void funcCodeGen(struct tnode *t, FILE *fp, int label){
 }
 
 void functionCallerCode(FILE *fp, int label, struct ArgStruct *args, boolean isMethod, int method_addr_reg){
-	int reg1;
+	int reg1,reg2;
+	int temp_reg_num = reg_num;
+	struct tnode* node;
+	
+	
 	//push registers
-	for(int i=1; i<=reg_num; ++i)
+	for(int i=1; i<=temp_reg_num; ++i)
 		fprintf(fp,"PUSH R%d\n",i);
+	
+	fprintf(fp,"MOV R1, R%d\n",method_addr_reg);
+	reg_num = 1;
 		
-	//push args
+	//push args to temp stack
 	int len = 0;
 	struct ArgStruct* temp = args;
 	struct ArgStack *st = (struct ArgStack*)malloc(sizeof(struct ArgStack));
@@ -584,12 +595,36 @@ void functionCallerCode(FILE *fp, int label, struct ArgStruct *args, boolean isM
 	while(temp != NULL){
 		pushArgStack(st,temp -> arg);
 		temp = temp -> next;
+	}
+	
+	//adding self in case of methods
+	if(isMethod == True){ 
+		
+		node = popArgStack(st);
+		reg1 = getReg();
+		
+		//pushing class object
+		getVarMemLoc(node,fp,reg1,True);
+		reg2 = getReg();
+		fprintf(fp,"MOV R%d, R%d\n",reg2,reg1);
+		fprintf(fp,"MOV R%d, [R%d]\n",reg2,reg2);
+		fprintf(fp,"PUSH R%d\n",reg2);
+		freeReg();
+		
+		//pushing virtual func table ptr
+		fprintf(fp,"ADD R%d, 1\n",reg1);
+		fprintf(fp,"MOV R%d, [R%d]\n",reg1,reg1);
+		fprintf(fp,"PUSH R%d\n",reg1);
+		
+		freeReg();
+		len += 2;
 	}	
 	
+	//pushing the arguments
 	while(st -> head != NULL){
 		reg1 = getReg();
-		struct tnode* node = popArgStack(st);
-		oper_code_gen(node,fp,reg1,True);
+		node = popArgStack(st);
+		oper_code_gen(node,fp,reg1);
 		fprintf(fp,"PUSH R%d\n",reg1);
 		freeReg();
 		++len;
@@ -601,8 +636,9 @@ void functionCallerCode(FILE *fp, int label, struct ArgStruct *args, boolean isM
 	
 	//call
 	if(isMethod == True){
-		fprintf(fp,"MOV R%d, [R%d]\n",method_addr_reg,method_addr_reg);
-		fprintf(fp,"CALL R%d\n",method_addr_reg);	
+		//method_addr_reg has been moved to R1
+		fprintf(fp,"MOV R1, [R1]\n");
+		fprintf(fp,"CALL R1\n");	
 	}else
 		fprintf(fp,"CALL F%d\n", label);
 	
@@ -614,8 +650,9 @@ void functionCallerCode(FILE *fp, int label, struct ArgStruct *args, boolean isM
 		fprintf(fp,"POP R1\n");
 	
 	//pop registers
-	for(int i=reg_num; i>0; --i)
+	for(int i=temp_reg_num; i>0; --i)
 		fprintf(fp,"POP R%d\n",i);
+	reg_num = temp_reg_num;
 }
 
 void functionCalledStartCode(FILE *fp){

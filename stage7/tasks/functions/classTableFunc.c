@@ -67,8 +67,7 @@ void addToClassTable(struct ClassTable* classTable, struct TypeTable* typeTable,
 
 void generateClassAttrList(struct ClassTableEntry* class_entry, struct dnode* root, struct TypeTableEntry* field_dtype, struct ClassTableEntry* field_ctype, struct TypeTable* typeTable, struct ClassTable* classTable){
 	
-	static int fieldIndex = 0;
-	static int methodIndex = 0;
+
 	if(root == NULL)
 		return;
 	
@@ -81,10 +80,10 @@ void generateClassAttrList(struct ClassTableEntry* class_entry, struct dnode* ro
 		case type_node: generateClassAttrList(class_entry,root -> left,TLookup(typeTable,root -> type_name), CLookup(classTable,root -> type_name),typeTable, classTable);
 				break;
 		
-		case func_node: addToClassMethodList(class_entry,MInstall(root -> varname, methodIndex++, field_dtype, root -> params));
+		case func_node: addToClassMethodList(class_entry,MInstall(root -> varname, field_dtype, root -> params));
 				break;
 		
-		case leaf_node: addToClassAttrList(class_entry,AInstall(root -> varname, root -> dim, fieldIndex++, field_dtype, field_ctype));
+		case leaf_node: addToClassAttrList(class_entry,AInstall(root -> varname, root -> dim, field_dtype, field_ctype));
 				break;
 				
 		
@@ -155,11 +154,11 @@ void verifyMethodHead(char* name, struct ParamStruct* params, struct TypeTableEn
 
 //--------------------------------------- ATTR FUNC ----------------------------------------------
 
-struct AttrList* AInstall(char* varname, int dim, int fieldIndex, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype){
+struct AttrList* AInstall(char* varname, int dim, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype){
 	struct AttrList* attr = (struct AttrList*)malloc(sizeof(struct AttrList));
 	attr -> varname = varname;
 	attr -> dim = dim;
-	attr -> fieldIndex = fieldIndex;
+	attr -> fieldIndex = 0;
 	attr -> dtype = dtype;
 	attr -> ctype = ctype;
 	attr -> next = NULL;
@@ -187,12 +186,14 @@ void addToClassAttrList(struct ClassTableEntry* entry, struct AttrList* new_node
 				exit(0);
 		}
 		
-		if(count >= 8){
+		if(count >= 7){
 			printf("Member attribute count for %s is exceeding Limit(8)",entry -> class_name);
 			exit(0);
 		}
-		else
+		else{
+			new_node -> fieldIndex = count + 1;
 			temp -> next = new_node;
+		}
 	}
 }
 
@@ -212,10 +213,10 @@ struct AttrList* ALookup(struct AttrList* attr, char* name){
 //--------------------------------------------------- METHOD FUNC -----------------------------------
 
 
-struct MethodList* MInstall(char* method_name, int methodIndex, struct TypeTableEntry* dtype, struct ParamStruct* params){
+struct MethodList* MInstall(char* method_name, struct TypeTableEntry* dtype, struct ParamStruct* params){
 	struct MethodList* method = (struct MethodList*)malloc(sizeof(struct MethodList));
 	method -> method_name = method_name;
-	method -> methodIndex = methodIndex;
+	method -> methodIndex = 0;
 	method -> flabel = getFuncLabel();
 	method -> dtype = dtype;
 	method -> params = params;
@@ -244,12 +245,14 @@ void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_
 				exit(0);
 		}
 		
-		if(count >= 8){
+		if(count >= 7){
 			printf("Member attribute count for %s is exceeding Limit(8)",entry -> class_name);
 			exit(0);
 		}
-		else
+		else{
+			new_node -> methodIndex = count + 1;
 			temp -> next = new_node;
+		}
 	}
 }
 

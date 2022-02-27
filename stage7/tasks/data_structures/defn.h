@@ -32,8 +32,9 @@ typedef  int node_type;
 #define return_node 26
 
 #define mem_init_node 30
-#define alloc_node 31
-#define free_node 32
+#define type_alloc_node 31
+#define class_alloc_node 32
+#define free_node 33
 #define end 100
 
 //datatype

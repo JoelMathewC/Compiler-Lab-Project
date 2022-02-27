@@ -1,8 +1,8 @@
 void dimResCodeGen(FILE* fp, reg_index reg, int dim_cur, int dim_abs, struct ArrayDims* indices);
 
-int getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg, boolean findParent);
+int getVarMemLoc(struct tnode* t, FILE *fp, reg_index reg, boolean findParentOfClass);
 
-void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg, boolean findParent);
+void oper_code_gen(struct tnode *t, FILE *fp, reg_index reg);
 
 void lib_code_gen(int func, int loc_reg, FILE *fp);
 

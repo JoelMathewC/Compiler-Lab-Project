@@ -5,7 +5,7 @@
 */
 
 /*Create a node tnode*/
-struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct FieldList* fieldRef,struct AttrList* attrRef, struct MethodList* methodRef, struct tnode *l, struct tnode *r);
+struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args, struct TypeTableEntry* typeRef, struct ClassTableEntry* classRef, struct FieldList* fieldRef, struct AttrList* attrRef, struct MethodList* methodRef, struct tnode *l, struct tnode *r);
 
 struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct ArrayDims* indices, struct TypeTable* typeTable, struct ClassTable* classTable);
 
@@ -35,7 +35,9 @@ struct tnode* makeReadNode(struct tnode *l);
 
 struct tnode* makeWriteNode(struct tnode *l);
 
-struct tnode* makeAllocNode();
+struct tnode* makeTypeAllocNode();
+
+struct tnode* makeClassAllocNode(char* className, struct ClassTable* classTable);
 
 struct tnode* makeFreeNode(struct tnode *l,struct TypeTable* table);
 

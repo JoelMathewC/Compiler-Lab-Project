@@ -9,8 +9,11 @@ struct tnode {
 	int dim;
 	node_type nodetype;  		// information about non-leaf nodes - read/write/connector/+/* etc. 
 	
-	struct FieldList* fieldRef;	//reference to field in case of user defined types
-	struct AttrList* attrRef; //reference to attribute in case of classes
+	struct ClassTableEntry* classRef; // refer to class entry when attribute is being accessed
+	struct TypeTableEntry* typeRef; // refer to type entry when attribute is being accessed
+	
+	struct FieldList* fieldRef;
+	struct AttrList* attrRef;
 	struct MethodList* methodRef;
 	
 	struct ClassTableEntry* ctype;

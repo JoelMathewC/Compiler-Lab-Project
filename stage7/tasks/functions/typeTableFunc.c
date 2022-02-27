@@ -118,7 +118,7 @@ int calculateDtypeSize(struct FieldList* fl, struct TypeTable* table){
 
 void generateFieldList(struct TypeTableEntry* type_entry, struct dnode* root, struct TypeTableEntry* field_dtype, struct TypeTable* table){
 	
-	static int fieldIndex = 0;
+
 	if(root == NULL)
 		return;
 	
@@ -131,7 +131,7 @@ void generateFieldList(struct TypeTableEntry* type_entry, struct dnode* root, st
 		case type_node: generateFieldList(type_entry,root -> left,TLookup(table,root -> type_name),table);
 				break;
 		
-		case leaf_node: addToFieldList(type_entry,FInstall(root -> varname, root -> dim, fieldIndex++, field_dtype));
+		case leaf_node: addToFieldList(type_entry,FInstall(root -> varname, root -> dim, field_dtype));
 				break;
 				
 		
@@ -173,11 +173,11 @@ void printTypeTable(struct TypeTable* table){
 
 //--------------------------------------- FIELD FUNC ----------------------------------------------
 
-struct FieldList* FInstall(char* varname, int dim, int fieldIndex, struct TypeTableEntry* dtype){
+struct FieldList* FInstall(char* varname, int dim, struct TypeTableEntry* dtype){
 	struct FieldList* fl = (struct FieldList*)malloc(sizeof(struct FieldList));
 	fl -> varname = varname;
 	fl -> dim = dim;
-	fl -> fieldIndex = fieldIndex;
+	fl -> fieldIndex = 0;
 	fl -> dtype = dtype;
 	fl -> next = NULL;
 	return fl;
@@ -204,12 +204,14 @@ void addToFieldList(struct TypeTableEntry* entry, struct FieldList* new_node){
 				exit(0);
 		}
 		
-		if(count >= 8){
+		if(count >= 7){
 			printf("Member attribute count for %s is exceeding Limit(8)",entry -> type_name);
 			exit(0);
 		}
-		else
+		else{
+			new_node -> fieldIndex = count + 1;
 			temp -> next = new_node;
+		}
 	}
 }
 

@@ -78,7 +78,7 @@
 %token STR INT VOID NULL_TYPE TUPLE
 %token PLUS MINUS STAR DIV MOD ASSIGN GT GTE LT LTE EQ NEQ ADDR AND OR
 %token START END ENDSTMT DECL ENDDECL TYPE ENDTYPE CLASS ENDCLASS
-%token READ WRITE ALLOC INITIALIZE FREE
+%token READ WRITE ALLOC INITIALIZE FREE NEW
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL
 %token BREAK CONTINUE RETURN
@@ -104,7 +104,7 @@ program : GtypeBlock GclassBlock GdeclBlock FdefBlock MainBlock	{}
 	| MainBlock							{}
 	;
 	
-GclassBlock : CLASS GclassList ENDCLASS			{/*printClassTable(classTable);*/printf("CLASS DONE\n");}
+GclassBlock : CLASS GclassList ENDCLASS			{/*printClassTable(classTable);printf("CLASS DONE\n");*/}
 	| CLASS ENDCLASS					{}
 	;
 
@@ -169,6 +169,7 @@ GclassFuncDef : MName '{' LdeclBlock START Slist END '}'		{
 	;
 
 MName : Type ID '(' ParamList ')'			{	
+								localMemLoc = 0;
 								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
 								verifyMethodHead($<string>2,$4,TLookup(typeTable,$<string>1),CLookup(classTable,currentClass));
 								addMethodParamToLST(lst,$4,CLookup(classTable,currentClass));
@@ -176,7 +177,7 @@ MName : Type ID '(' ParamList ')'			{
 							}
 	;
 	
-GtypeBlock : TYPE GtypeList ENDTYPE			{printf("TYPE DONE\n");}
+GtypeBlock : TYPE GtypeList ENDTYPE			{/*printf("TYPE DONE\n");*/}
 	| TYPE ENDTYPE					{}
 	;
 
@@ -376,7 +377,8 @@ expr : expr PLUS expr							{$$ = makeOperatorNode(add,$1,$3,typeTable);}
 	 | ID '(' ArgList ')'						{$$ = makeFuncNode($<string>1,gst,$3);}
 	 | Identifier							{$$ = $1;}
 	 | ADDR Identifier						{$$ = makeAddrNode($2,gst,lst,typeTable);}
-	 | ALLOC '(' ')'						{$$ = makeAllocNode();}
+	 | ALLOC '(' ')'						{$$ = makeTypeAllocNode();}
+	 | NEW '(' ID ')'						{$$ = makeClassAllocNode($<string>3,classTable);}
 	 | INITIALIZE '(' ')'						{$$ = makeMemInitNode(typeTable);}
 	 | FREE '(' Identifier ')'					{$$ = makeFreeNode($3,typeTable);}
 	 | StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
@@ -463,13 +465,13 @@ void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable
 			func_num = 0;
 			
 			while(method != NULL){
-				fprintf(fp,"MOV R1, %d\n",4096+func_num);
+				fprintf(fp,"MOV R1, %d\n",4096 + (classEntry -> classIndex * 8) +func_num);
 				fprintf(fp,"MOV [R1], F%d\n",method -> flabel);
 				method = method -> next;
 				++func_num;
 			}
 			while(func_num == 0 || func_num % 8 != 0){
-				fprintf(fp,"MOV R1, %d\n",4096+func_num);
+				fprintf(fp,"MOV R1, %d\n",4096+ (classEntry -> classIndex * 8) + func_num);
 				fprintf(fp,"MOV [R1], -1\n");
 				++func_num;
 			}
@@ -506,10 +508,11 @@ void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable
 				shape = shape -> next;
 
 			}
-		}else if(node -> ctype != NULL){
+		}
+/*		else if(node -> ctype != NULL){
 			fprintf(fp,"MOV R1, %d\n",node -> binding + 1); //address of func ptr
 			fprintf(fp,"MOV [R1], %d\n", 4096 + (node -> ctype -> classIndex * 8));
-		}
+		} */
 		node = node -> next;
 	}
 }

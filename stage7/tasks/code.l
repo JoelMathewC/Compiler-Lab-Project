@@ -43,6 +43,7 @@ endwhile	{return ENDWHILE;}
 read		{return READ;}
 write		{return WRITE;}
 alloc		{return ALLOC;}
+new 		{return NEW;}
 initialize	{return INITIALIZE;}
 free		{return FREE;}
 break		{return BREAK;}

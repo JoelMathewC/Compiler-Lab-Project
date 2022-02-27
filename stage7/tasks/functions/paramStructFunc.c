@@ -33,7 +33,7 @@ struct FieldList* makeFieldListFromParam(struct ParamStruct* pt){
 	struct ParamStruct* temp = pt;
 	int i = 0;
 	while(temp != NULL){
-		fl = FInstall(temp -> name,temp -> dim, i, temp -> dtype);
+		fl = FInstall(temp -> name,temp -> dim, temp -> dtype);
 		
 		if(head == NULL){
 			head = fl;
@@ -52,16 +52,12 @@ struct FieldList* makeFieldListFromParam(struct ParamStruct* pt){
 struct ArgStruct* addArguments(struct ArgStruct* args,struct ArgStruct* node, struct TypeTable* typeTable){
 	struct ArgStruct* temp = args;
 	if(temp == NULL){
-		args = node;
+			args = node;
 	}else{
 		while(temp -> next != NULL){
 			temp = temp -> next;
 		}
 		
-		if(node -> arg -> ctype != NULL){
-			temp -> next = makeArgStruct(makeNumNode(4096 + (node -> arg -> ctype -> classIndex * 8),0,typeTable));
-			temp = temp -> next;
-		}
 		temp -> next = node;
 	}
 	return args;

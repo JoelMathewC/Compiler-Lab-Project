@@ -18,7 +18,7 @@ void printTypeTable(struct TypeTable* table);
 
 //--------------------------------------- FIELD FUNC ----------------------------------------------
 
-struct FieldList* FInstall(char* varname, int dim, int fieldIndex, struct TypeTableEntry* dtype);
+struct FieldList* FInstall(char* varname, int dim, struct TypeTableEntry* dtype);
 
 void addToFieldList(struct TypeTableEntry* entry, struct FieldList* new_node);
 

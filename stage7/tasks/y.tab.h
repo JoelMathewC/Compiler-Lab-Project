@@ -87,18 +87,19 @@ extern int yydebug;
     ALLOC = 293,
     INITIALIZE = 294,
     FREE = 295,
-    IF = 296,
-    THEN = 297,
-    ELSE = 298,
-    ENDIF = 299,
-    WHILE = 300,
-    DO = 301,
-    ENDWHILE = 302,
-    REPEAT = 303,
-    UNTIL = 304,
-    BREAK = 305,
-    CONTINUE = 306,
-    RETURN = 307
+    NEW = 296,
+    IF = 297,
+    THEN = 298,
+    ELSE = 299,
+    ENDIF = 300,
+    WHILE = 301,
+    DO = 302,
+    ENDWHILE = 303,
+    REPEAT = 304,
+    UNTIL = 305,
+    BREAK = 306,
+    CONTINUE = 307,
+    RETURN = 308
   };
 #endif
 /* Tokens.  */
@@ -140,18 +141,19 @@ extern int yydebug;
 #define ALLOC 293
 #define INITIALIZE 294
 #define FREE 295
-#define IF 296
-#define THEN 297
-#define ELSE 298
-#define ENDIF 299
-#define WHILE 300
-#define DO 301
-#define ENDWHILE 302
-#define REPEAT 303
-#define UNTIL 304
-#define BREAK 305
-#define CONTINUE 306
-#define RETURN 307
+#define NEW 296
+#define IF 297
+#define THEN 298
+#define ELSE 299
+#define ENDIF 300
+#define WHILE 301
+#define DO 302
+#define ENDWHILE 303
+#define REPEAT 304
+#define UNTIL 305
+#define BREAK 306
+#define CONTINUE 307
+#define RETURN 308
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -168,7 +170,7 @@ union YYSTYPE
 	int* seq;
 	
 
-#line 172 "y.tab.h"
+#line 174 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

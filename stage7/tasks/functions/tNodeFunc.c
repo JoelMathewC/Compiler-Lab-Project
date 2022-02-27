@@ -1,4 +1,4 @@
-struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args,struct FieldList* fieldRef,struct AttrList* attrRef, struct MethodList* methodRef, struct tnode *l, struct tnode *r){
+struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, struct TypeTableEntry* dtype, struct ClassTableEntry* ctype, struct ArrayDims* indices, struct Gsymbol* Gentry, struct Lsymbol* Lentry, struct ArgStruct* args, struct TypeTableEntry* typeRef, struct ClassTableEntry* classRef, struct FieldList* fieldRef, struct AttrList* attrRef, struct MethodList* methodRef, struct tnode *l, struct tnode *r){
 	struct tnode* node;
 	node = (struct tnode*)malloc(sizeof(struct tnode));
 	
@@ -14,6 +14,8 @@ struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, s
 	node -> Gentry = Gentry;
 	node -> Lentry = Lentry;
 	node -> nodetype = nodetype;
+	node -> typeRef = typeRef;
+	node -> classRef = classRef;
 	node -> fieldRef = fieldRef;
 	node -> attrRef = attrRef;
 	node -> methodRef = methodRef;
@@ -59,13 +61,16 @@ struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable*
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, dim, leaf_node, dtype, ctype, indices, temp_g, temp_l, NULL, NULL, NULL, NULL, NULL, NULL);
+	return createTree(emp_data, c, dim, leaf_node, dtype, ctype, indices, temp_g, temp_l, NULL, dtype, ctype, NULL, NULL, NULL, NULL, NULL);
 }
 
 struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable, struct ClassTable* classTable){
 	union Data emp_data;
 	struct FieldList* fl = NULL;
 	struct AttrList* attr = NULL;
+	
+	struct TypeTableEntry* typeRef = parent -> dtype;
+	struct ClassTableEntry* classRef = parent -> ctype;
 	
 	if(parent -> dtype != NULL){
 		fl = FLookup(parent -> dtype -> fieldList,child_name);
@@ -93,7 +98,7 @@ struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeT
 	temp -> dtype = (fl == NULL) ? attr -> dtype : fl -> dtype;
 	temp -> ctype = (attr == NULL) ? NULL : attr -> ctype;
 	
-	temp -> left = createTree(emp_data, child_name, (fl == NULL) ? attr -> dim : fl -> dim, leaf_node, (fl == NULL) ? attr -> dtype : fl -> dtype, (attr == NULL) ? NULL : attr -> ctype, NULL, NULL, NULL, NULL, fl, attr, NULL, NULL, NULL);
+	temp -> left = createTree(emp_data, child_name, (fl == NULL) ? attr -> dim : fl -> dim, leaf_node, (fl == NULL) ? attr -> dtype : fl -> dtype, (attr == NULL) ? NULL : attr -> ctype, NULL, NULL, NULL, NULL, typeRef, classRef, fl, attr, NULL, NULL, NULL);
 	return parent;
 }
 
@@ -126,12 +131,13 @@ struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* 
 		exit(0);
 	}
 	
-	return createTree(emp_data, c, 0, func_node, temp_g -> dtype, temp_g -> ctype, NULL, temp_g, NULL, args, NULL, NULL, NULL, NULL, NULL);
+	return createTree(emp_data, c, 0, func_node, temp_g -> dtype, temp_g -> ctype, NULL, temp_g, NULL, args, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 
 struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct ArgStruct* args, struct TypeTable* typeTable){ 
 	union Data emp_data;
+	struct ClassTableEntry* classRef = parent -> ctype;
 	
 	if(parent -> ctype == NULL){
 		printf("Error: function not method of a known class");
@@ -166,7 +172,7 @@ struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct Arg
 	
 	//adding the self argument
 	struct ArgStruct* arg1 = makeArgStruct(parent);
-	addArguments(args,arg1,typeTable);
+	args = addArguments(args,arg1,typeTable);
 	
 	
 	//setting dtype of parent
@@ -180,7 +186,7 @@ struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct Arg
 	temp -> dtype = method -> dtype;
 	temp -> ctype = NULL;
 	
-	temp -> left = createTree(emp_data, method_name, 0, func_node, method -> dtype, NULL, NULL, NULL, NULL, args, NULL, NULL, method, NULL, NULL);
+	temp -> left = createTree(emp_data, method_name, 0, func_node, method -> dtype, NULL, NULL, NULL, NULL, args, NULL, classRef, NULL, NULL, method, NULL, NULL);
 	return parent;
 }
 
@@ -189,18 +195,18 @@ struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct Arg
 struct tnode* makeNumNode(int n, int dim, struct TypeTable* table){
 	union Data data;
 	data.num = n;
-	return createTree(data,NULL, dim, leaf_node, TLookup(table,"int"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return createTree(data,NULL, dim, leaf_node, TLookup(table,"int"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 struct tnode* makeStringNode(char* str, struct TypeTable* table){
 	union Data data;
 	data.str = str;
-	return createTree(data, NULL, 0, leaf_node, TLookup(table,"string"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return createTree(data, NULL, 0, leaf_node, TLookup(table,"string"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 struct tnode* makeNullNode(struct TypeTable* table){
 	union Data emp_data;
-	return createTree(emp_data,NULL, 0, leaf_node, TLookup(table,"null"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return createTree(emp_data,NULL, 0, leaf_node, TLookup(table,"null"), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 
@@ -223,7 +229,7 @@ struct tnode* makeAddrNode(struct tnode* node, struct GSymbolTable* gst, struct 
 	}
 		
 	data.num = binding;
-	return createTree(data, NULL, dim, leaf_node, node -> dtype, node -> ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);	
+	return createTree(data, NULL, dim, leaf_node, node -> dtype, node -> ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);	
 }
 
 struct tnode* makePtrNode(struct tnode* node, struct TypeTable* table){
@@ -234,7 +240,7 @@ struct tnode* makePtrNode(struct tnode* node, struct TypeTable* table){
 	}
 	struct TypeTableEntry* dtype = node -> dim - 1 == 0 ? node -> dtype : TLookup(table,"int");
 	struct ClassTableEntry* ctype = (dtype == NULL) ? node -> ctype : NULL;
-	return createTree(emp_data, NULL, node -> dim-1,ptr_node, dtype, ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, node, NULL);	
+	return createTree(emp_data, NULL, node -> dim-1,ptr_node, dtype, ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, node, NULL);	
 }
 
 
@@ -264,7 +270,15 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 		case assign:	
 				switch(r -> nodetype){
 				
-					case alloc_node : if(isMemAssignable(l) == True)
+					case type_alloc_node : if(isMemAssignable(l) == True)
+								dtype = TLookup(typeTable,"void");
+							else{
+								printf("Error: Memory cannot be assigned");
+								exit(0);
+							}
+							break;
+					
+					case class_alloc_node : if(isMemAssignable(l) == True)
 								dtype = TLookup(typeTable,"void");
 							else{
 								printf("Error: Memory cannot be assigned");
@@ -324,13 +338,13 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 	}
 	
 	union Data emp_data;
-	return createTree(emp_data,NULL,dim, op, dtype, ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, l, r);
+	return createTree(emp_data,NULL,dim, op, dtype, ctype, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, l, r);
 }
 
 
 struct tnode* makeConnectorNode(struct tnode *l,struct tnode *r){
 	union Data emp_data;
-	return createTree(emp_data, NULL,-1, connector, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, l, r);
+	return createTree(emp_data, NULL,-1, connector, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, l, r);
 }
 
 struct tnode* makeReadNode(struct tnode *l){ // if a memory location is not passed in it will cause a runtime error
@@ -339,54 +353,66 @@ struct tnode* makeReadNode(struct tnode *l){ // if a memory location is not pass
 		printf("Error: Reading of variable not possible");
 		exit(0);
 	}
-	return createTree(emp_data,NULL,l -> dim, read, NULL, NULL, NULL,NULL, NULL, NULL,NULL, NULL, NULL, l,NULL);
+	return createTree(emp_data,NULL,l -> dim, read, NULL, NULL, NULL,NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, l,NULL);
 }
 
 struct tnode* makeWriteNode(struct tnode *l){ // write node has only left child
 	union Data emp_data;
-	return createTree(emp_data,NULL,l -> dim, write,NULL, NULL, NULL,NULL, NULL, NULL,NULL, NULL, NULL, l,NULL);
+	return createTree(emp_data,NULL,l -> dim, write,NULL, NULL, NULL,NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, l,NULL);
 }
 
-struct tnode* makeAllocNode(){ 
+struct tnode* makeTypeAllocNode(){ 
 	union Data emp_data;
-	return createTree(emp_data,NULL,0,alloc_node,NULL,NULL,NULL,NULL, NULL, NULL,NULL, NULL, NULL, NULL,NULL);
+	return createTree(emp_data,NULL,0,type_alloc_node,NULL,NULL,NULL,NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL,NULL);
+}
+
+struct tnode* makeClassAllocNode(char* className, struct ClassTable* classTable){ 
+	union Data emp_data;
+	
+	struct ClassTableEntry* entry = CLookup(classTable,className);
+	if(entry == NULL){
+		printf("Error: No class with name %s",className);
+		exit(0);
+	}
+	
+	return createTree(emp_data,NULL,0,class_alloc_node,NULL,entry,NULL,NULL, NULL, NULL,NULL,NULL, NULL, NULL, NULL, NULL,NULL);
 }
 
 struct tnode* makeFreeNode(struct tnode *l,struct TypeTable* table){ 
 	union Data emp_data;
-	return createTree(emp_data,NULL,l -> dim,free_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL,NULL,NULL, l,NULL);
+	return createTree(emp_data,NULL,l -> dim,free_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL,NULL, NULL, NULL, NULL, l,NULL);
 }
 
 struct tnode* makeMemInitNode(struct TypeTable* table){ 
 	union Data emp_data;
-	return createTree(emp_data,NULL,0,mem_init_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL, NULL,NULL, NULL,NULL);
+	return createTree(emp_data,NULL,0,mem_init_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL,NULL);
 }
 
 struct tnode* makeJumpNode(node_type nodetype){
 	union Data emp_data;
-	return createTree(emp_data, NULL,-1, nodetype, NULL, NULL, NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL,NULL);
+	return createTree(emp_data, NULL,-1, nodetype, NULL, NULL, NULL, NULL, NULL,NULL, NULL, NULL, NULL, NULL, NULL, NULL,NULL);
 }
 
 struct tnode* makeReturnNode(struct tnode* t){
 	union Data emp_data;
-	return createTree(emp_data, NULL,t -> dim,return_node,NULL,NULL,NULL, NULL, NULL,NULL, NULL,NULL,NULL, t,NULL);
+	return createTree(emp_data, NULL,t -> dim,return_node,NULL,NULL,NULL, NULL, NULL,NULL, NULL,NULL, NULL, NULL, NULL, t,NULL);
 }
 
 struct tnode* makeIfElseBlock(struct tnode* cond, struct tnode* then_node, struct tnode* else_node){// left child is condition, right child is connector (left: if, right: else)
 	union Data emp_data;
-	struct tnode* node1 = createTree(emp_data, NULL,-1,then_else_node, NULL,NULL,NULL, NULL, NULL, NULL, NULL,NULL, NULL,then_node,else_node);
-	struct tnode* node2 = createTree(emp_data, NULL,-1,if_node,NULL,NULL,NULL, NULL, NULL, NULL, NULL,NULL, NULL,cond,node1);
+	struct tnode* node1 = createTree(emp_data, NULL,-1,then_else_node, NULL,NULL,NULL, NULL, NULL, NULL, NULL,NULL, NULL, NULL, NULL, then_node,else_node);
+	struct tnode* node2 = createTree(emp_data, NULL,-1,if_node,NULL,NULL,NULL, NULL, NULL, NULL, NULL,NULL, NULL, NULL, NULL, cond,node1);
 	return node2;
 }
 
 struct tnode* makeWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,-1,while_node,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, cond, body);
+	return createTree(emp_data, NULL,-1,while_node,NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, cond, body);
 }
 
 struct tnode* makeDoWhileBlock(struct tnode* cond, struct tnode* body){ // left child condition, right condition is body
 	union Data emp_data;
-	return createTree(emp_data, NULL,-1, do_while, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, cond, body);
+	return createTree(emp_data, NULL,-1, do_while, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, cond, body);
 }
 
 
