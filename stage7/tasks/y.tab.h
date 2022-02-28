@@ -53,53 +53,55 @@ extern int yydebug;
     ID = 259,
     NUM = 260,
     STRING = 261,
-    STR = 262,
-    INT = 263,
-    VOID = 264,
-    NULL_TYPE = 265,
-    TUPLE = 266,
-    PLUS = 267,
-    MINUS = 268,
-    STAR = 269,
-    DIV = 270,
-    MOD = 271,
-    ASSIGN = 272,
-    GT = 273,
-    GTE = 274,
-    LT = 275,
-    LTE = 276,
-    EQ = 277,
-    NEQ = 278,
-    ADDR = 279,
-    AND = 280,
-    OR = 281,
-    START = 282,
-    END = 283,
-    ENDSTMT = 284,
-    DECL = 285,
-    ENDDECL = 286,
-    TYPE = 287,
-    ENDTYPE = 288,
-    CLASS = 289,
-    ENDCLASS = 290,
-    READ = 291,
-    WRITE = 292,
-    ALLOC = 293,
-    INITIALIZE = 294,
-    FREE = 295,
-    NEW = 296,
-    IF = 297,
-    THEN = 298,
-    ELSE = 299,
-    ENDIF = 300,
-    WHILE = 301,
-    DO = 302,
-    ENDWHILE = 303,
-    REPEAT = 304,
-    UNTIL = 305,
-    BREAK = 306,
-    CONTINUE = 307,
-    RETURN = 308
+    SELF = 262,
+    STR = 263,
+    INT = 264,
+    VOID = 265,
+    NULL_TYPE = 266,
+    TUPLE = 267,
+    PLUS = 268,
+    MINUS = 269,
+    STAR = 270,
+    DIV = 271,
+    MOD = 272,
+    ASSIGN = 273,
+    GT = 274,
+    GTE = 275,
+    LT = 276,
+    LTE = 277,
+    EQ = 278,
+    NEQ = 279,
+    ADDR = 280,
+    AND = 281,
+    OR = 282,
+    START = 283,
+    END = 284,
+    ENDSTMT = 285,
+    DECL = 286,
+    ENDDECL = 287,
+    TYPE = 288,
+    ENDTYPE = 289,
+    CLASS = 290,
+    ENDCLASS = 291,
+    READ = 292,
+    WRITE = 293,
+    ALLOC = 294,
+    INITIALIZE = 295,
+    FREE = 296,
+    NEW = 297,
+    DELETE = 298,
+    IF = 299,
+    THEN = 300,
+    ELSE = 301,
+    ENDIF = 302,
+    WHILE = 303,
+    DO = 304,
+    ENDWHILE = 305,
+    REPEAT = 306,
+    UNTIL = 307,
+    BREAK = 308,
+    CONTINUE = 309,
+    RETURN = 310
   };
 #endif
 /* Tokens.  */
@@ -107,53 +109,55 @@ extern int yydebug;
 #define ID 259
 #define NUM 260
 #define STRING 261
-#define STR 262
-#define INT 263
-#define VOID 264
-#define NULL_TYPE 265
-#define TUPLE 266
-#define PLUS 267
-#define MINUS 268
-#define STAR 269
-#define DIV 270
-#define MOD 271
-#define ASSIGN 272
-#define GT 273
-#define GTE 274
-#define LT 275
-#define LTE 276
-#define EQ 277
-#define NEQ 278
-#define ADDR 279
-#define AND 280
-#define OR 281
-#define START 282
-#define END 283
-#define ENDSTMT 284
-#define DECL 285
-#define ENDDECL 286
-#define TYPE 287
-#define ENDTYPE 288
-#define CLASS 289
-#define ENDCLASS 290
-#define READ 291
-#define WRITE 292
-#define ALLOC 293
-#define INITIALIZE 294
-#define FREE 295
-#define NEW 296
-#define IF 297
-#define THEN 298
-#define ELSE 299
-#define ENDIF 300
-#define WHILE 301
-#define DO 302
-#define ENDWHILE 303
-#define REPEAT 304
-#define UNTIL 305
-#define BREAK 306
-#define CONTINUE 307
-#define RETURN 308
+#define SELF 262
+#define STR 263
+#define INT 264
+#define VOID 265
+#define NULL_TYPE 266
+#define TUPLE 267
+#define PLUS 268
+#define MINUS 269
+#define STAR 270
+#define DIV 271
+#define MOD 272
+#define ASSIGN 273
+#define GT 274
+#define GTE 275
+#define LT 276
+#define LTE 277
+#define EQ 278
+#define NEQ 279
+#define ADDR 280
+#define AND 281
+#define OR 282
+#define START 283
+#define END 284
+#define ENDSTMT 285
+#define DECL 286
+#define ENDDECL 287
+#define TYPE 288
+#define ENDTYPE 289
+#define CLASS 290
+#define ENDCLASS 291
+#define READ 292
+#define WRITE 293
+#define ALLOC 294
+#define INITIALIZE 295
+#define FREE 296
+#define NEW 297
+#define DELETE 298
+#define IF 299
+#define THEN 300
+#define ELSE 301
+#define ENDIF 302
+#define WHILE 303
+#define DO 304
+#define ENDWHILE 305
+#define REPEAT 306
+#define UNTIL 307
+#define BREAK 308
+#define CONTINUE 309
+#define RETURN 310
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -170,7 +174,7 @@ union YYSTYPE
 	int* seq;
 	
 
-#line 174 "y.tab.h"
+#line 178 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

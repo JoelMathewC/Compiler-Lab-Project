@@ -64,41 +64,68 @@ struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable*
 	return createTree(emp_data, c, dim, leaf_node, dtype, ctype, indices, temp_g, temp_l, NULL, dtype, ctype, NULL, NULL, NULL, NULL, NULL);
 }
 
-struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable, struct ClassTable* classTable){
+struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable){
 	union Data emp_data;
 	struct FieldList* fl = NULL;
-	struct AttrList* attr = NULL;
-	
 	struct TypeTableEntry* typeRef = parent -> dtype;
-	struct ClassTableEntry* classRef = parent -> ctype;
+
+	if(parent -> dtype == NULL){
+		printf("Error: Attributes of a class are private and cannot be accessed externally");
+		exit(0);
+	}
 	
-	if(parent -> dtype != NULL){
-		fl = FLookup(parent -> dtype -> fieldList,child_name);
-		if(fl == NULL){
-			printf("Error: %s field does not exist",child_name);
-			exit(0);
-		}
+	if(parent -> dtype -> nodetype != userDefType){
+		printf("Error: attempt at accessing attributes of non-userDefTypes");
+		exit(0);
 	}
-	else if(parent -> ctype != NULL){
-		attr = ALookup(parent -> ctype -> attrList,child_name);
-		if(attr == NULL){
-			printf("Error: %s field does not exist",child_name);
-			exit(0);
-		}
+
+	fl = FLookup(parent -> dtype -> fieldList,child_name);
+	if(fl == NULL){
+		printf("Error: %s field does not exist",child_name);
+		exit(0);
 	}
+	
 	
 	
 	struct tnode* temp = parent;
 	while(temp -> left != NULL){
-		temp -> dtype = (fl == NULL) ? attr -> dtype : fl -> dtype;
-		temp -> ctype = (attr == NULL) ? NULL : attr -> ctype;
+		temp -> dtype = fl -> dtype;
 		temp = temp -> left;
 	}
 	
-	temp -> dtype = (fl == NULL) ? attr -> dtype : fl -> dtype;
-	temp -> ctype = (attr == NULL) ? NULL : attr -> ctype;
+	temp -> dtype = fl -> dtype;
 	
-	temp -> left = createTree(emp_data, child_name, (fl == NULL) ? attr -> dim : fl -> dim, leaf_node, (fl == NULL) ? attr -> dtype : fl -> dtype, (attr == NULL) ? NULL : attr -> ctype, NULL, NULL, NULL, NULL, typeRef, classRef, fl, attr, NULL, NULL, NULL);
+	
+	temp -> left = createTree(emp_data, child_name, fl -> dim, leaf_node, fl -> dtype, NULL, NULL, NULL, NULL, NULL, typeRef, NULL, fl, NULL, NULL, NULL, NULL);
+	return parent;
+}
+
+
+struct tnode* extendClassNode(struct tnode* parent,char* child_name, struct ClassTable* classTable){
+	union Data emp_data;
+	struct AttrList* attr = NULL;
+	
+	
+	struct ClassTableEntry* classRef = parent -> ctype;
+	
+	
+	attr = ALookup(parent -> ctype -> attrList,child_name);
+	if(attr == NULL){
+		printf("Error: %s field does not exist",child_name);
+		exit(0);
+	}
+	
+	struct tnode* temp = parent;
+	while(temp -> left != NULL){
+		temp -> dtype = attr -> dtype;
+		temp -> ctype = attr -> ctype;
+		temp = temp -> left;
+	}
+	
+	temp -> dtype = attr -> dtype;
+	temp -> ctype = attr -> ctype;
+	
+	temp -> left = createTree(emp_data, child_name, attr -> dim, leaf_node, attr -> dtype, attr -> ctype, NULL, NULL, NULL, NULL, NULL, classRef, NULL, attr, NULL, NULL, NULL);
 	return parent;
 }
 
@@ -270,7 +297,14 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 		case assign:	
 				switch(r -> nodetype){
 				
-					case type_alloc_node : if(isMemAssignable(l) == True)
+					case type_alloc_node : 
+							
+							if(l -> dtype == NULL){
+								printf("Error: alloc used for invalid type");
+								exit(0);
+							}
+					
+							if(isMemAssignable(l) == True)
 								dtype = TLookup(typeTable,"void");
 							else{
 								printf("Error: Memory cannot be assigned");
@@ -278,7 +312,15 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 							}
 							break;
 					
-					case class_alloc_node : if(isMemAssignable(l) == True)
+					case class_alloc_node : 
+					
+							if(l -> ctype == NULL){
+								printf("Error: new used for invalid class");
+								exit(0);
+							}
+					
+					
+							if(isMemAssignable(l) == True)
 								dtype = TLookup(typeTable,"void");
 							else{
 								printf("Error: Memory cannot be assigned");
@@ -380,8 +422,27 @@ struct tnode* makeClassAllocNode(char* className, struct ClassTable* classTable)
 
 struct tnode* makeFreeNode(struct tnode *l,struct TypeTable* table){ 
 	union Data emp_data;
+	
+	if(l -> dtype == NULL || l -> dtype -> nodetype != userDefType){
+		printf("Error: Free called on an invalid identifier");
+		exit(0);
+	}
+	
 	return createTree(emp_data,NULL,l -> dim,free_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL,NULL, NULL, NULL, NULL, l,NULL);
 }
+
+
+struct tnode* makeDeleteNode(struct tnode *l,struct TypeTable* table){ 
+	union Data emp_data;
+	
+	if(l -> ctype == NULL){
+		printf("Error: Delete called on an invalid identifier");
+		exit(0);
+	}
+	
+	return createTree(emp_data,NULL,l -> dim,free_node,TLookup(table,"int"),NULL,NULL,NULL, NULL, NULL,NULL,NULL, NULL, NULL, NULL, l,NULL);
+}
+
 
 struct tnode* makeMemInitNode(struct TypeTable* table){ 
 	union Data emp_data;

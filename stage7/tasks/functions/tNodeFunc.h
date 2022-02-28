@@ -9,7 +9,9 @@ struct tnode* createTree(union Data val, char* c, int dim, node_type nodetype, s
 
 struct tnode* makeIdNode(char* c, struct GSymbolTable* gst, struct LSymbolTable* lst, struct ArrayDims* indices, struct TypeTable* typeTable, struct ClassTable* classTable);
 
-struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable, struct ClassTable* classTable);
+struct tnode* extendTypeNode(struct tnode* parent,char* child_name, struct TypeTable* typeTable);
+
+struct tnode* extendClassNode(struct tnode* parent,char* child_name, struct ClassTable* classTable);
 
 struct tnode* makeFuncNode(char* c, struct GSymbolTable* gst, struct ArgStruct* args);
 
@@ -40,6 +42,8 @@ struct tnode* makeTypeAllocNode();
 struct tnode* makeClassAllocNode(char* className, struct ClassTable* classTable);
 
 struct tnode* makeFreeNode(struct tnode *l,struct TypeTable* table);
+
+struct tnode* makeDeleteNode(struct tnode *l,struct TypeTable* table);
 
 struct tnode* makeMemInitNode(struct TypeTable* table);
 

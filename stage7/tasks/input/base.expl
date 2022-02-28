@@ -4,7 +4,14 @@ decl
 int a;
 int b;
 int add(int c);
+void init(int a, int b);
 enddecl
+void init(int a , int b){
+begin
+self.a = a;
+self.b = b;
+end
+}
 int add(int c){
 decl
 int r;
@@ -25,10 +32,10 @@ int x;
 enddecl
 begin
 x = initialize();
-r = alloc();
-r.a = 1;
-r.b = 2;
+r = new(root);
+r.init(1,2);
 x = r.add(3);
 write(x);
+x = delete(r);
 end
 }

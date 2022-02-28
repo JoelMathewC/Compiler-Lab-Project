@@ -46,6 +46,7 @@ alloc		{return ALLOC;}
 new 		{return NEW;}
 initialize	{return INITIALIZE;}
 free		{return FREE;}
+delete		{return DELETE;}
 break		{return BREAK;}
 continue	{return CONTINUE;}
 return		{return RETURN;}
@@ -53,6 +54,7 @@ repeat		{return REPEAT;}
 until		{return UNTIL;}
 AND		{return AND;}
 OR		{return OR;}
+self		{yylval.string = strdup(yytext); return SELF;}
 {identifier}	{yylval.string = strdup(yytext); return ID;}
 {numbers}	{yylval.number = atoi(yytext); return NUM;}
 {strings}	{yylval.string = strdup(yytext); return STRING;}

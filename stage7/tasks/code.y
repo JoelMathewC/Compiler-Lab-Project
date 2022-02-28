@@ -74,11 +74,11 @@
 %type <string> Type TupleType FuncRetType LocalType
 
 %token MAIN
-%token ID NUM STRING
+%token ID NUM STRING SELF
 %token STR INT VOID NULL_TYPE TUPLE
 %token PLUS MINUS STAR DIV MOD ASSIGN GT GTE LT LTE EQ NEQ ADDR AND OR
 %token START END ENDSTMT DECL ENDDECL TYPE ENDTYPE CLASS ENDCLASS
-%token READ WRITE ALLOC INITIALIZE FREE NEW
+%token READ WRITE ALLOC INITIALIZE FREE NEW DELETE
 %token IF THEN ELSE ENDIF
 %token WHILE DO ENDWHILE REPEAT UNTIL
 %token BREAK CONTINUE RETURN
@@ -332,8 +332,9 @@ Stmt:	InputStmt							{$$ = $1;}
 	| CONTINUE ENDSTMT						{$$ = makeJumpNode(continue_node);}
 	| ID '(' ')' ENDSTMT						{$$ = makeFuncNode($<string>1,gst,NULL);}
 	| ID '(' ArgList ')' ENDSTMT					{$$ = makeFuncNode($<string>1,gst,$3);}
-	| StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
-	| StructId '.' ID '(' ArgList ')'				{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
+	| StructId '.' ID '(' ')' ENDSTMT				{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
+	| StructId '.' ID '(' ArgList ')' ENDSTMT			{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
+	| SELF '.' ID '(' ArgList ')' ENDSTMT				{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,$5,typeTable);}
 	| RETURN expr ENDSTMT						{$$ = makeReturnNode($2);}
 	;
 	
@@ -381,8 +382,10 @@ expr : expr PLUS expr							{$$ = makeOperatorNode(add,$1,$3,typeTable);}
 	 | NEW '(' ID ')'						{$$ = makeClassAllocNode($<string>3,classTable);}
 	 | INITIALIZE '(' ')'						{$$ = makeMemInitNode(typeTable);}
 	 | FREE '(' Identifier ')'					{$$ = makeFreeNode($3,typeTable);}
+	 | DELETE '(' Identifier ')'					{$$ = makeDeleteNode($3,typeTable);}
 	 | StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
 	 | StructId '.' ID '(' ArgList ')'				{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
+	 | SELF '.' ID '(' ArgList ')'				{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,$5,typeTable);}
 	 ;
 	 
 ArgList : ArgList ',' expr		{$$ = addArguments($1,makeArgStruct($3),typeTable);}
@@ -394,7 +397,8 @@ Identifier : STAR '(' expr ')'		{$$ = makePtrNode($3,typeTable);}
 	| StructId			{$$ = $1;}
 	;
 
-StructId : StructId '.' ID			{$$ = extendTypeNode($1,$<string>3,typeTable,classTable);}
+StructId : StructId '.' ID			{$$ = extendTypeNode($1,$<string>3,typeTable);}
+	| SELF '.' ID				{$$ = extendClassNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,classTable);}
 	| IdArr				{$$ = $1;}
 	;
 
