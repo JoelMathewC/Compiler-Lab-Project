@@ -64,6 +64,7 @@
 	int number;
 	char* string;
 	int* seq;
+	struct MethodList* methodList;
 	
 }
 
@@ -73,6 +74,7 @@
 %type <dno> GdeclBlock GdeclList Gdecl GidList Gid LdeclBlock LdeclList Ldecl LidList Lid IdentifierDecl IdArrDecl GtypeDeclList GtypeDecl GtypeIdList GclassDeclBlock GclassAttrDeclList GclassAttrDecl GclassIdList GclassFuncDeclList GclassFuncDecl GclassFuncName
 %type <no> Slist Stmt InputStmt OutputStmt AssgStmt expr LoopStmt IfStmt Identifier IdArr StructId
 %type <string> Type TupleType FuncRetType LocalType
+%type <methodList> MName
 
 %token MAIN
 %token ID NUM STRING SELF
@@ -143,7 +145,7 @@ GclassAttrDeclList : GclassAttrDeclList GclassAttrDecl		{$$ = makeDConnectorNode
 	| GclassAttrDecl						{$$ = $1;}
 	;
 
-GclassAttrDecl : Type GclassIdList ENDSTMT			{$$ = makeDatatypeNode($1,$2);}
+GclassAttrDecl : Type GclassIdList ENDSTMT			{$$ = makeDatatypeNode($1,$2,typeTable,classTable);}
 	;
 
 GclassIdList : GclassIdList ',' ID			{$$ = makeDConnectorNode($1,declIdNode($<string>1,0,NULL));}	
@@ -154,7 +156,7 @@ GclassFuncDeclList : GclassFuncDeclList GclassFuncDecl		{$$ = makeDConnectorNode
 	| GclassFuncDecl						{$$ = $1;}
 	;
 
-GclassFuncDecl : Type GclassFuncName ENDSTMT			{$$ = makeDatatypeNode($1,$2);}
+GclassFuncDecl : Type GclassFuncName ENDSTMT			{$$ = makeDatatypeNode($1,$2,typeTable,classTable);}
 	;
 
 GclassFuncName : ID '(' ParamList ')'				{$$ = declFuncNode($<string>1,$3);}
@@ -164,10 +166,8 @@ GclassFuncDefBlock : GclassFuncDefBlock GclassFuncDef		{}
 	| GclassFuncDef						{}
 	;
 
-GclassFuncDef : MName '{' LdeclBlock START Slist END '}'		{	
-										struct ClassTableEntry* entry = CLookup(classTable,currentClass);
-										struct MethodList* method = MLookup(entry -> methodList,$<string>1);
-										funcCodeGen($5, fp,method -> flabel);
+GclassFuncDef : MName '{' LdeclBlock START Slist END '}'		{
+										funcCodeGen($5, fp,$1 -> flabel);
 										lst = NULL;
 									}
 	;
@@ -176,8 +176,10 @@ MName : Type ID '(' ParamList ')'			{
 								localMemLoc = 0;
 								lst = (struct LSymbolTable*)malloc(sizeof(struct LSymbolTable));
 								verifyMethodHead($<string>2,$4,TLookup(typeTable,$<string>1),CLookup(classTable,currentClass));
-								addMethodParamToLST(lst,$4,CLookup(classTable,currentClass));
-								$<string>$ = $<string>2;
+								
+								struct ClassTableEntry* entry = CLookup(classTable,currentClass);
+								addMethodParamToLST(lst,$4,entry);
+								$$ = MLookupWithParams(entry -> methodList,$4,$<string>2);
 							}
 	;
 	
@@ -189,14 +191,17 @@ GtypeList : GtypeList Gtype				{}
 	| Gtype					{}
 	;
 
-Gtype : ID '{' GtypeDeclList '}'			{addUserDefToTypeTable(typeTable,$3,$<string>1);}
+Gtype : GtypeName '{' GtypeDeclList '}'		{addUserDefToTypeTable(typeTable,$3,$<string>1);}
+	;
+	
+GtypeName : ID 					{createTypeEntry(typeTable, $<string>1);}
 	;
 
 GtypeDeclList : GtypeDeclList GtypeDecl		{$$ = makeDConnectorNode($1,$2);}
 	| GtypeDecl					{$$ = $1;}
 	;
 
-GtypeDecl : Type GtypeIdList ENDSTMT			{$$ = makeDatatypeNode($1,$2);}
+GtypeDecl : Type GtypeIdList ENDSTMT			{$$ = makeDatatypeNode($1,$2,typeTable,classTable);}
 	;
 
 GtypeIdList : GtypeIdList ',' ID			{$$ = makeDConnectorNode($1,declIdNode($<string>1,0,NULL));}	
@@ -227,7 +232,7 @@ Type : INT				{$$ = $<string>1;}
 TupleType : TUPLE ID '(' ParamList ')'	{addTupleToTypeTable(typeTable,$4,$<string>2);$$ = $<string>2;}
 	;
 
-Gdecl : Type GidList ENDSTMT			{$$ = makeDatatypeNode($1,$2);}
+Gdecl : Type GidList ENDSTMT			{$$ = makeDatatypeNode($1,$2,typeTable,classTable);}
 	;
 
 GidList : GidList ',' Gid				{$$ = makeDConnectorNode($1,$3);}	
@@ -304,7 +309,7 @@ LdeclList : LdeclList Ldecl			{$$ = makeDConnectorNode($1,$2);}
 	| Ldecl				{$$ = $1;}
 	;
 	
-Ldecl : LocalType LidList ENDSTMT		{$$ = makeDatatypeNode($1,$2);}
+Ldecl : LocalType LidList ENDSTMT		{$$ = makeDatatypeNode($1,$2,typeTable,classTable);}
 	;
 	
 LocalType : INT				{$$ = $<string>1;}
@@ -339,7 +344,7 @@ Stmt:	InputStmt							{$$ = $1;}
 	| ID '(' ArgList ')' ENDSTMT					{$$ = makeFuncNode($<string>1,gst,$3);}
 	| StructId '.' ID '(' ')' ENDSTMT				{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
 	| StructId '.' ID '(' ArgList ')' ENDSTMT			{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
-	| SELF '.' ID '(' ')'						{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,NULL,typeTable);}
+	| SELF '.' ID '(' ')' ENDSTMT					{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,NULL,typeTable);}
 	| SELF '.' ID '(' ArgList ')' ENDSTMT				{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,$5,typeTable);}
 	| RETURN expr ENDSTMT						{$$ = makeReturnNode($2);}
 	;

@@ -174,9 +174,10 @@ union YYSTYPE
 	int number;
 	char* string;
 	int* seq;
+	struct MethodList* methodList;
 	
 
-#line 180 "y.tab.h"
+#line 181 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -138,31 +138,9 @@ void printClassTable(struct ClassTable* table){
 
 void verifyMethodHead(char* name, struct ParamStruct* params, struct TypeTableEntry* return_type, struct ClassTableEntry* classEntry){
 
-	struct MethodList* method = MLookup(classEntry -> methodList,name);
-	
-	
+	struct MethodList* method = MLookupWithParams(classEntry -> methodList, params, name);
 	if(method == NULL){
 		printf("Function not declared: %s",name);
-		exit(0);
-	}
-	
-	if(method -> dtype != return_type){
-		printf("Function declared with different return types: %s",name);
-		exit(0);
-	}
-	
-	struct ParamStruct* method_p = method -> params;
-	struct ParamStruct* p = params;
-	while(method_p != NULL && p != NULL){
-		if(method_p -> dtype != p -> dtype || method_p -> ctype != p -> ctype){
-			printf("Parameters inconsistent with declaration: %s", name);
-			exit(0);
-		}
-		method_p = method_p -> next;
-		p = p -> next;
-	}
-	if(method_p != NULL || p != NULL){
-		printf("Parameters inconsistent with declaration: %s", name);
 		exit(0);
 	}
 }
@@ -251,7 +229,7 @@ void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_
 		entry -> methodCount += 1;
 	}else{
 		while(temp -> next != NULL){
-			if(strcmp(temp -> method_name, new_node -> method_name) == 0){
+			if(isSameFuncDecl(temp, new_node -> params, new_node -> method_name) == True){
 				if(temp -> isInherited == True){ // if function is being overwritten
 					temp -> flabel = getFuncLabel();
 					done = True;
@@ -264,7 +242,7 @@ void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_
 			temp = temp -> next;
 		}
 		
-		if(strcmp(temp -> method_name, new_node -> method_name) == 0){
+		if(isSameFuncDecl(temp, new_node -> params, new_node -> method_name) == True){
 				if(temp -> isInherited == True){ // if function is being overwritten
 					temp -> flabel = getFuncLabel();
 					done = True;
@@ -288,11 +266,21 @@ void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_
 	
 }
 
-struct MethodList* MLookup(struct MethodList* method, char* name){
+struct MethodList* MLookupWithArgs(struct MethodList* method, struct ArgStruct* args, char* name){
+	struct MethodList* temp = method;
+	while(temp != NULL){
+		if(isSameFuncCall(temp,args,name) == True)
+			return temp;
+		temp = temp -> next;
+	}
+	return NULL;
+}
+
+struct MethodList* MLookupWithParams(struct MethodList* method, struct ParamStruct* params, char* name){
 	struct MethodList* temp = method;
 	
 	while(temp != NULL){
-		if(strcmp(temp -> method_name, name) == 0)
+		if(isSameFuncDecl(temp,params,name) == True)
 			return temp;
 		temp = temp -> next;
 	}
@@ -300,16 +288,68 @@ struct MethodList* MLookup(struct MethodList* method, char* name){
 	return NULL;
 }
 
-/*void checkFunctionRedef(struct ClassTableEntry* entry, struct MethodList* method){*/
-/*	*/
-/*	if(entry -> parent == NULL)*/
-/*		return;*/
-/*	*/
-/*	struct MethodList* search = MLookup(entry -> parent -> methodList, method -> method_name);*/
-/*	*/
-/*	if(search == NULL)*/
-/*		return;*/
-/*	*/
-/*	method -> flabel = getFuncLabel();*/
+boolean isSameFuncCall(struct MethodList* method,struct ArgStruct* args, char* name){
+	struct ArgStruct* temp = args;
+	struct ParamStruct* params = method -> params;
 
-/*}*/
+	if(strcmp(method -> method_name,name) == 0){
+		
+		while(temp != NULL && params != NULL){
+
+			if((temp -> arg -> dtype != NULL && params -> dtype != NULL)){
+				if(strcmp(temp -> arg -> dtype -> type_name, params -> dtype -> type_name) != 0){
+					return False;
+				}
+			}else if((temp -> arg -> ctype != NULL && params -> ctype != NULL)){
+				if(strcmp(temp -> arg -> ctype -> class_name, params -> ctype -> class_name) != 0){
+					return False;
+				}
+			}else{
+				return False;
+			}
+			
+			
+			temp = temp -> next;
+			params = params -> next;
+		}
+		
+		if(temp == NULL && params == NULL){
+			return True;
+		}
+		
+	}
+	
+	return False;
+	
+}
+
+boolean isSameFuncDecl(struct MethodList* method_old, struct ParamStruct* new_params, char* new_method_name){
+
+	struct ParamStruct* p_old = method_old -> params;
+	struct ParamStruct* p_new = new_params;
+	if(strcmp(method_old -> method_name, new_method_name) == 0){
+		while(p_old != NULL && p_new != NULL){
+			
+			if((p_old -> dtype != NULL && p_new -> dtype != NULL)){
+				if(strcmp(p_old -> dtype -> type_name, p_new -> dtype -> type_name) != 0){
+					return False;
+				}
+			}else if((p_old -> ctype != NULL && p_new -> ctype != NULL)){
+				if(isClassAssignable(p_old -> ctype, p_new -> ctype) == False){
+					return False;
+				}
+			}else{
+				return False;
+			}
+			
+			
+			p_old = p_old -> next;
+			p_new = p_new -> next;
+		}
+		
+		if(p_old == NULL && p_new == NULL){
+			return True;
+		}
+	}
+	return False;
+}

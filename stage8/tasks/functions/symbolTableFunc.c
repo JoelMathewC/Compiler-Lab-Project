@@ -187,11 +187,6 @@ void addMethodParamToLST(struct LSymbolTable* lst, struct ParamStruct* pt, struc
 		if(temp_p -> ctype != NULL){ // for ctype
 			--len;
 		}
-		
-		if(strcmp(temp_p -> name,"self") == 0){
-			printf("Error: Method cannot have parameter with name param");
-			exit(0);
-		}
 		LocalInstall(lst,temp_p -> name, temp_p -> dim,len, temp_p -> dtype, temp_p -> ctype);
 		temp_p = temp_p -> next;
 		--len;

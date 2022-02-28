@@ -86,21 +86,21 @@ void addTupleToTypeTable(struct TypeTable* table, struct ParamStruct* pt, char* 
 	temp -> next = entry;
 }
 
-
-void addUserDefToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name){ //only for user def type
-	
-	struct TypeTableEntry* entry = TInstall(type_name,1, userDefType, NULL);
+void createTypeEntry(struct TypeTable* table, char* type_name){
+	struct TypeTableEntry* entry = TInstall(type_name,0, userDefType, NULL);
 	
 	struct TypeTableEntry* temp = table -> head;
 	while(temp -> next != NULL)
 		temp = temp -> next;
 		
 	temp -> next = entry;
-	
-	
+}
+
+
+void addUserDefToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name){ //only for user def type
+	struct TypeTableEntry* entry = TLookup(table,type_name);
 	generateFieldList(entry, root,NULL, table);
 	entry -> size = calculateDtypeSize(entry -> fieldList,table);
-	
 }
 
 int calculateDtypeSize(struct FieldList* fl, struct TypeTable* table){
@@ -185,13 +185,12 @@ struct FieldList* FInstall(char* varname, int dim, struct TypeTableEntry* dtype)
 
 void addToFieldList(struct TypeTableEntry* entry, struct FieldList* new_node){
 	struct FieldList* temp = entry -> fieldList;
-	int count = 0;
 	
-	if(entry -> fieldList == NULL)
+	if(entry -> fieldList == NULL){
 		entry -> fieldList = new_node;
-	else{
+		entry -> size += 1;
+	}else{
 		while(temp -> next != NULL){
-			++count;
 			if(strcmp(temp -> varname, new_node -> varname) == 0){
 				printf("Error: Two member fields with the same name (%s)",temp -> varname);
 				exit(0);
@@ -204,12 +203,13 @@ void addToFieldList(struct TypeTableEntry* entry, struct FieldList* new_node){
 				exit(0);
 		}
 		
-		if(count >= 7){
+		if(entry -> size >= 8){
 			printf("Member attribute count for %s is exceeding Limit(8)",entry -> type_name);
 			exit(0);
 		}
 		else{
-			new_node -> fieldIndex = count + 1;
+			new_node -> fieldIndex = entry -> size;
+			entry -> size += 1;
 			temp -> next = new_node;
 		}
 	}

@@ -6,6 +6,6 @@ struct dnode* declFuncNode(char*c, struct ParamStruct* params);
 
 struct dnode* makeDConnectorNode(struct dnode *l,struct dnode *r);
 
-struct dnode* makeDatatypeNode(char* name, struct dnode *l);
+struct dnode* makeDatatypeNode(char* name, struct dnode *l, struct TypeTable* typeTable, struct ClassTable* classTable);
 
 struct ArrayShape* addArrayShape(struct ArrayShape* shape, int dim_val);

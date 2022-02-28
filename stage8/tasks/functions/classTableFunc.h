@@ -32,6 +32,10 @@ struct MethodList* MInstall(char* method_name, int flabel, boolean isInherited, 
 
 void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_node);
 
-struct MethodList* MLookup(struct MethodList* attr, char* name);
+struct MethodList* MLookupWithArgs(struct MethodList* method, struct ArgStruct* args, char* name);
 
-void checkFunctionRedef(struct ClassTableEntry* entry, struct MethodList* method);
+struct MethodList* MLookupWithParams(struct MethodList* method, struct ParamStruct* params, char* name);
+
+boolean isSameFuncCall(struct MethodList* method,struct ArgStruct* args, char* name);
+
+boolean isSameFuncDecl(struct MethodList* method_old, struct ParamStruct* new_params, char* new_method_name);

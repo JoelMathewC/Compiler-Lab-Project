@@ -8,6 +8,8 @@ struct TypeTableEntry* TLookup(struct TypeTable* table, char* name);
 
 void addTupleToTypeTable(struct TypeTable* table, struct ParamStruct* pt, char* type_name);
 
+void createTypeEntry(struct TypeTable* table, char* type_name);
+
 void addUserDefToTypeTable(struct TypeTable* table, struct dnode* root, char* type_name);
 
 int calculateDtypeSize(struct FieldList* fl, struct TypeTable* table);

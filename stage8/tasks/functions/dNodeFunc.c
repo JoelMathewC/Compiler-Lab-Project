@@ -28,7 +28,14 @@ struct dnode* makeDConnectorNode(struct dnode *l,struct dnode *r){
 	return createDTree(NULL, 0,connector,NULL, NULL, NULL, l, r);
 }
 
-struct dnode* makeDatatypeNode(char* name, struct dnode *l){ //datatype nodes have only a left child
+struct dnode* makeDatatypeNode(char* name, struct dnode *l, struct TypeTable* typeTable, struct ClassTable* classTable){ //datatype nodes have only a left child
+	struct TypeTableEntry* dtype = TLookup(typeTable,name);
+	struct ClassTableEntry* ctype = CLookup(classTable,name);
+	
+	if(dtype == NULL && ctype == NULL){
+		printf("Error: Undefined Type used");
+		exit(0);
+	}
 	return createDTree(NULL,0,type_node, name, NULL,NULL, l,NULL);
 }
 

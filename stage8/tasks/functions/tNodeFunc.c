@@ -171,8 +171,8 @@ struct tnode* makeMethodNode(struct tnode* parent, char* method_name, struct Arg
 		exit(0);
 	}
 	
-	struct MethodList* method = MLookup(parent -> ctype -> methodList, method_name);
-	
+
+	struct MethodList* method = MLookupWithArgs(parent -> ctype -> methodList, args, method_name);
 	if(method == NULL){
 		printf("Error: No method (%s) for class %s",method_name,parent -> ctype -> class_name);
 		exit(0);
