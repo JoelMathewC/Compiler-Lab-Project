@@ -17,6 +17,7 @@ struct MethodList{
 	char* method_name;
 	int methodIndex;
 	int flabel;
+	boolean isInherited;
 	
 	struct ParamStruct* params;
 	struct TypeTableEntry* dtype; //return can only be from type Table

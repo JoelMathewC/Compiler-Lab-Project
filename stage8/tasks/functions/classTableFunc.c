@@ -27,26 +27,15 @@ struct ClassTableEntry* CInstall(char* name, struct ClassTableEntry* parent){
 		
 		while(temp_a != NULL){
 			
-			if(attrList == NULL){
-				attrList = AInstall(temp_a -> varname, temp_a -> dim, temp_a -> dtype, temp_a -> ctype);
-				entry -> attrList = attrList;
-			}else
-				addToClassAttrList(entry, AInstall(temp_a -> varname, temp_a -> dim, temp_a -> dtype, temp_a -> ctype));
-
+			addToClassAttrList(entry, AInstall(temp_a -> varname, temp_a -> dim, temp_a -> dtype, temp_a -> ctype));
 			temp_a = temp_a -> next;
-			entry -> attrCount += 1;
 		}
 		
 		while(temp_m != NULL){
 		
-			if(methodList == NULL){
-				methodList = MInstall(temp_m -> method_name, temp_m -> flabel, temp_m -> dtype, temp_m -> params);
-				entry -> methodList = methodList;
-			}else
-				addToClassMethodList(entry, MInstall(temp_m -> method_name, temp_m -> flabel, temp_m -> dtype, temp_m -> params));
-				
+			addToClassMethodList(entry, MInstall(temp_m -> method_name, temp_m -> flabel, True, temp_m -> dtype, temp_m -> params));
 			temp_m = temp_m -> next;
-			entry -> methodCount += 1;
+			
 		}
 		
 	
@@ -107,7 +96,7 @@ void generateClassAttrList(struct ClassTableEntry* class_entry, struct dnode* ro
 		case type_node: generateClassAttrList(class_entry,root -> left,TLookup(typeTable,root -> type_name), CLookup(classTable,root -> type_name),typeTable, classTable);
 				break;
 		
-		case func_node: addToClassMethodList(class_entry,MInstall(root -> varname, -1, field_dtype, root -> params));
+		case func_node: addToClassMethodList(class_entry,MInstall(root -> varname, -1, False, field_dtype, root -> params));
 				break;
 		
 		case leaf_node: addToClassAttrList(class_entry,AInstall(root -> varname, root -> dim, field_dtype, field_ctype));
@@ -217,7 +206,7 @@ void addToClassAttrList(struct ClassTableEntry* entry, struct AttrList* new_node
 			exit(0);
 		}
 		else{
-			new_node -> fieldIndex = entry -> attrCount + 1;
+			new_node -> fieldIndex = entry -> attrCount;
 			temp -> next = new_node;
 		}
 	}
@@ -241,11 +230,12 @@ struct AttrList* ALookup(struct AttrList* attr, char* name){
 //--------------------------------------------------- METHOD FUNC -----------------------------------
 
 
-struct MethodList* MInstall(char* method_name, int flabel, struct TypeTableEntry* dtype, struct ParamStruct* params){
+struct MethodList* MInstall(char* method_name, int flabel, boolean isInherited, struct TypeTableEntry* dtype, struct ParamStruct* params){
 	struct MethodList* method = (struct MethodList*)malloc(sizeof(struct MethodList));
 	method -> method_name = method_name;
 	method -> methodIndex = 0;
-	method -> flabel = flabel;
+	method -> isInherited = isInherited;
+	method -> flabel = (flabel == -1) ? getFuncLabel() : flabel;
 	method -> dtype = dtype;
 	method -> params = params;
 	method -> next = NULL;
@@ -254,34 +244,48 @@ struct MethodList* MInstall(char* method_name, int flabel, struct TypeTableEntry
 
 void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_node){
 	struct MethodList* temp = entry -> methodList;
+	boolean done = False;
 	
-	if(entry -> methodList == NULL)
+	if(entry -> methodList == NULL){
 		entry -> methodList = new_node;
-	else{
+		entry -> methodCount += 1;
+	}else{
 		while(temp -> next != NULL){
 			if(strcmp(temp -> method_name, new_node -> method_name) == 0){
-				printf("Error: Two methods fields with the same name (%s)",temp -> method_name);
-				exit(0);
+				if(temp -> isInherited == True){ // if function is being overwritten
+					temp -> flabel = getFuncLabel();
+					done = True;
+				}
+				else{
+					printf("Error: Two methods fields with the same name (%s)",temp -> method_name);
+					exit(0);
+				}
 			}
 			temp = temp -> next;
 		}
 		
 		if(strcmp(temp -> method_name, new_node -> method_name) == 0){
-				printf("Error: Two methods fields with the same name (%s)",temp -> method_name);
-				exit(0);
+				if(temp -> isInherited == True){ // if function is being overwritten
+					temp -> flabel = getFuncLabel();
+					done = True;
+				}
+				else{
+					printf("Error: Two methods fields with the same name (%s)",temp -> method_name);
+					exit(0);
+				}
 		}
 		
 		if(entry -> methodCount >= 8){
 			printf("Member attribute count for %s is exceeding Limit(8)",entry -> class_name);
 			exit(0);
 		}
-		else{
-			new_node -> methodIndex = entry -> methodCount + 1;
+		else if(done == False){
+			new_node -> methodIndex = entry -> methodCount;
 			temp -> next = new_node;
+			entry -> methodCount += 1;
 		}
 	}
 	
-	entry -> methodCount += 1;
 }
 
 struct MethodList* MLookup(struct MethodList* method, char* name){
@@ -295,3 +299,17 @@ struct MethodList* MLookup(struct MethodList* method, char* name){
 	
 	return NULL;
 }
+
+/*void checkFunctionRedef(struct ClassTableEntry* entry, struct MethodList* method){*/
+/*	*/
+/*	if(entry -> parent == NULL)*/
+/*		return;*/
+/*	*/
+/*	struct MethodList* search = MLookup(entry -> parent -> methodList, method -> method_name);*/
+/*	*/
+/*	if(search == NULL)*/
+/*		return;*/
+/*	*/
+/*	method -> flabel = getFuncLabel();*/
+
+/*}*/

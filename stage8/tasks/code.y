@@ -53,6 +53,7 @@
 	char* currentClass;
 	void endCodeGen(FILE *fp);
 	void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable, FILE* fp);
+	void verifyFuncRetType(char* type,struct ClassTable* classTable);
 %}
 
 %union{
@@ -116,14 +117,12 @@ Gclass : ClassName '{' GclassDeclBlockSeg GclassFuncDefBlock '}'		{}
 	| ClassName '{' GclassDeclBlockSeg '}'				{}
 	;
 	
-ClassName : ID									{
+ClassName : ID									{	
 											currentClass = strdup($<string>1);
-											$<string>$ = $<string>1;
 											addToClassTable(classTable,$<string>1,NULL);
 										}
-	| ID EXTENDS ID							{
+	| ID EXTENDS ID							{	
 											currentClass = strdup($<string>1);
-											$<string>$ = $<string>1;
 											addToClassTable(classTable,$<string>1,$<string>3);
 										}
 	;
@@ -166,10 +165,8 @@ GclassFuncDefBlock : GclassFuncDefBlock GclassFuncDef		{}
 	;
 
 GclassFuncDef : MName '{' LdeclBlock START Slist END '}'		{	
-										
 										struct ClassTableEntry* entry = CLookup(classTable,currentClass);
 										struct MethodList* method = MLookup(entry -> methodList,$<string>1);
-										method -> flabel = getFuncLabel();
 										funcCodeGen($5, fp,method -> flabel);
 										lst = NULL;
 									}
@@ -271,7 +268,8 @@ FName : FuncRetType ID '(' ParamList ')'			{
 FuncRetType : INT				{$$ = $<string>1;}
 	| STR				{$$ = $<string>1;}
 	| VOID				{$$ = $<string>1;}
-	| ID				{$$ = $<string>1;}
+	| ID				{verifyFuncRetType($<string>1,classTable);
+					$$ = $<string>1;}
 	;
 
 ParamList : ParamList ',' Param			{$$ = addParameter($1,$3);}
@@ -341,6 +339,7 @@ Stmt:	InputStmt							{$$ = $1;}
 	| ID '(' ArgList ')' ENDSTMT					{$$ = makeFuncNode($<string>1,gst,$3);}
 	| StructId '.' ID '(' ')' ENDSTMT				{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
 	| StructId '.' ID '(' ArgList ')' ENDSTMT			{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
+	| SELF '.' ID '(' ')'						{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,NULL,typeTable);}
 	| SELF '.' ID '(' ArgList ')' ENDSTMT				{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,$5,typeTable);}
 	| RETURN expr ENDSTMT						{$$ = makeReturnNode($2);}
 	;
@@ -392,6 +391,7 @@ expr : expr PLUS expr							{$$ = makeOperatorNode(add,$1,$3,typeTable);}
 	 | DELETE '(' Identifier ')'					{$$ = makeDeleteNode($3,typeTable);}
 	 | StructId '.' ID '(' ')'					{$$ = makeMethodNode($1,$<string>3,NULL,typeTable);}
 	 | StructId '.' ID '(' ArgList ')'				{$$ = makeMethodNode($1,$<string>3,$5,typeTable);}
+	 | SELF '.' ID '(' ')'						{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,NULL,typeTable);}
 	 | SELF '.' ID '(' ArgList ')'				{$$ = makeMethodNode(makeIdNode($<string>1,gst,lst,NULL,typeTable,classTable),$<string>3,$5,typeTable);}
 	 ;
 	 
@@ -425,6 +425,14 @@ FILE* openFile(){
 	FILE *fp = fopen("output/output.out","w");
 	fprintf(fp,"0\nGEN\n0\n0\n0\n0\n0\n0\n");
 	return fp;
+}
+
+void verifyFuncRetType(char* type,struct ClassTable* classTable){
+	struct ClassTableEntry* entry = CLookup(classTable,type);
+	if(entry != NULL){
+		printf("Error: Return Type cannot be a class");
+		exit(0);
+	}
 }
 
 void startCodeGen(FILE* fp, int memLoc, struct GSymbolTable* gst, struct ClassTable* classTable){
@@ -481,7 +489,7 @@ void setMemLocationValues(struct GSymbolTable* gst,struct ClassTable* classTable
 				method = method -> next;
 				++func_num;
 			}
-			while(func_num == 0 || func_num % 8 != 0){
+			while(func_num <= 8){
 				fprintf(fp,"MOV R1, %d\n",4096+ (classEntry -> classIndex * 8) + func_num);
 				fprintf(fp,"MOV [R1], -1\n");
 				++func_num;

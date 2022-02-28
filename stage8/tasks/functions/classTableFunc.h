@@ -28,8 +28,10 @@ struct AttrList* ALookup(struct AttrList* attr, char* name);
 //--------------------------------------------------- METHOD FUNC -----------------------------------
 
 
-struct MethodList* MInstall(char* method_name, int flabel, struct TypeTableEntry* dtype, struct ParamStruct* params);
+struct MethodList* MInstall(char* method_name, int flabel, boolean isInherited, struct TypeTableEntry* dtype, struct ParamStruct* params);
 
 void addToClassMethodList(struct ClassTableEntry* entry, struct MethodList* new_node);
 
 struct MethodList* MLookup(struct MethodList* attr, char* name);
+
+void checkFunctionRedef(struct ClassTableEntry* entry, struct MethodList* method);

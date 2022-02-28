@@ -31,6 +31,7 @@ extends	{return EXTENDS;}
 endclass	{return ENDCLASS;}
 int		{yylval.string = strdup(yytext); return INT;}
 string		{yylval.string = strdup(yytext); return STR;}
+str		{char* c = (char*)malloc(6*sizeof(char)); strcpy(c,"string"); yylval.string = c; return STR;}
 void 		{yylval.string = strdup(yytext); return VOID;}
 null		{yylval.string = strdup(yytext); return NULL_TYPE;}
 tuple		{yylval.string = strdup(yytext); return TUPLE;}

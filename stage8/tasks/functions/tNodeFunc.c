@@ -320,7 +320,7 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 							}
 					
 					
-							if(isClassAssignable(l,r) == True)
+							if(isClassAssignable(l -> ctype ,r -> ctype) == True)
 								dtype = TLookup(typeTable,"void");
 							else{
 								printf("Error: Memory cannot be assigned");
@@ -333,7 +333,7 @@ struct tnode* makeOperatorNode(int op,struct tnode *l,struct tnode *r, struct Ty
 								printf("Error: Assignment to expression with array type");
 								exit(0);
 							}
-							else if((l -> dtype == r -> dtype) && (isClassAssignable(l,r) == True) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0))){
+							else if((l -> dtype == r -> dtype) && (isClassAssignable(l -> ctype,r -> ctype) == True) && ((l -> dim > 0 && r -> dim > 0)||(l -> dim == 0 && r -> dim == 0))){
 								dtype = TLookup(typeTable,"void");
 							}
 							else if(isMemAssignable(l) == True && (r -> dtype != NULL && strcmp(r -> dtype -> type_name,"null") == 0)){ // assigning to null
@@ -519,16 +519,16 @@ boolean isMemAssignable(struct tnode* node){
 }
 
 
-boolean isClassAssignable(struct tnode* l, struct tnode* r){
+boolean isClassAssignable(struct ClassTableEntry* l, struct ClassTableEntry* r){
 
 	if(l == NULL && r == NULL)
 		return True;
 	else if(l == NULL || r == NULL)
 		return False;
 	
-	struct ClassTableEntry* temp = r -> ctype;
+	struct ClassTableEntry* temp = r;
 	while(temp != NULL){
-		if(temp == l -> ctype)
+		if(temp == l)
 			return True;
 		temp = temp -> parent;
 	}

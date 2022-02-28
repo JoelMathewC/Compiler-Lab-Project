@@ -351,8 +351,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 58
-#define YY_END_OF_BUFFER 59
+#define YY_NUM_RULES 59
+#define YY_END_OF_BUFFER 60
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -362,26 +362,26 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[183] =
     {   0,
-        0,    0,   59,   57,   56,   56,   57,   57,   46,   55,
-       41,   44,   42,   43,   45,   39,   54,   49,   47,   48,
-       38,   38,   38,   57,   38,   38,   38,   38,   38,   38,
-       38,   38,   38,   38,   38,   38,   38,   38,   38,   53,
-        0,   40,    0,   39,   51,   52,   50,   38,   38,   36,
-       38,   38,   38,   38,   38,   38,   38,   21,   38,   38,
-       38,   38,   16,   38,   38,   38,   38,   38,   38,   38,
-       38,   38,   38,   38,   38,   38,   38,   40,   35,   38,
-       38,   38,   38,   38,   38,   38,   38,    3,   38,   38,
-       38,   11,   38,   26,   38,   38,   38,   38,   38,   38,
+        0,    0,   60,   58,   57,   57,   58,   58,   47,   56,
+       42,   45,   43,   44,   46,   40,   55,   50,   48,   49,
+       39,   39,   39,   58,   39,   39,   39,   39,   39,   39,
+       39,   39,   39,   39,   39,   39,   39,   39,   39,   54,
+        0,   41,    0,   40,   52,   53,   51,   39,   39,   37,
+       39,   39,   39,   39,   39,   39,   39,   22,   39,   39,
+       39,   39,   17,   39,   39,   39,   39,   39,   39,   39,
+       39,   39,   39,   39,   39,   39,   39,   41,   36,   39,
+       39,   39,   39,   39,   39,   39,   39,    3,   39,   39,
+       39,   11,   39,   27,   39,   39,   39,   39,   39,   13,
 
-       38,   38,   38,   38,   38,   38,   38,   38,   38,   38,
-       38,   38,    4,   38,   18,   38,   38,   38,   38,   38,
-       38,   28,   38,    1,   14,   23,   38,   38,   37,   38,
-       17,   38,    6,   38,   13,   38,   38,   25,    2,   30,
-        8,   38,   38,   38,   38,   19,   38,   38,   38,   38,
-       38,   38,   38,   15,   34,   20,   24,   38,   29,   38,
-       38,   38,   38,   38,   38,   33,   32,   12,   38,   38,
-        5,    7,   38,    9,   38,   31,   10,   22,   38,   38,
-       27,    0
+       39,   39,   39,   39,   39,   39,   39,   39,   39,   39,
+       39,   39,    4,   39,   19,   39,   39,   39,   39,   39,
+       39,   29,   39,    1,   15,   24,   39,   39,   38,   39,
+       18,   39,    6,   39,   14,   39,   39,   26,    2,   31,
+        8,   39,   39,   39,   39,   20,   39,   39,   39,   39,
+       39,   39,   39,   16,   35,   21,   25,   39,   30,   39,
+       39,   39,   39,   39,   39,   34,   33,   12,   39,   39,
+        5,    7,   39,    9,   39,   32,   10,   23,   39,   39,
+       28,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -906,236 +906,241 @@ YY_RULE_SETUP
 case 13:
 YY_RULE_SETUP
 #line 34 "code.l"
-{yylval.string = strdup(yytext); return VOID;}
+{char* c = (char*)malloc(6*sizeof(char)); strcpy(c,"string"); yylval.string = c; return STR;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 35 "code.l"
-{yylval.string = strdup(yytext); return NULL_TYPE;}
+{yylval.string = strdup(yytext); return VOID;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 36 "code.l"
-{yylval.string = strdup(yytext); return TUPLE;}
+{yylval.string = strdup(yytext); return NULL_TYPE;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 37 "code.l"
-{return IF;}
+{yylval.string = strdup(yytext); return TUPLE;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 38 "code.l"
-{return THEN;}
+{return IF;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 39 "code.l"
-{return ELSE;}
+{return THEN;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 40 "code.l"
-{return ENDIF;}
+{return ELSE;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 41 "code.l"
-{return WHILE;}
+{return ENDIF;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 42 "code.l"
-{return DO;}
+{return WHILE;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 43 "code.l"
-{return ENDWHILE;}
+{return DO;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 44 "code.l"
-{return READ;}
+{return ENDWHILE;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 45 "code.l"
-{return WRITE;}
+{return READ;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 46 "code.l"
-{return ALLOC;}
+{return WRITE;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 47 "code.l"
-{return NEW;}
+{return ALLOC;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 48 "code.l"
-{return INITIALIZE;}
+{return NEW;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 49 "code.l"
-{return FREE;}
+{return INITIALIZE;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 50 "code.l"
-{return DELETE;}
+{return FREE;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 51 "code.l"
-{return BREAK;}
+{return DELETE;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 52 "code.l"
-{return CONTINUE;}
+{return BREAK;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 53 "code.l"
-{return RETURN;}
+{return CONTINUE;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 54 "code.l"
-{return REPEAT;}
+{return RETURN;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 55 "code.l"
-{return UNTIL;}
+{return REPEAT;}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 56 "code.l"
-{return AND;}
+{return UNTIL;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 57 "code.l"
-{return OR;}
+{return AND;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 58 "code.l"
-{yylval.string = strdup(yytext); return SELF;}
+{return OR;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 59 "code.l"
-{yylval.string = strdup(yytext); return ID;}
+{yylval.string = strdup(yytext); return SELF;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
 #line 60 "code.l"
-{yylval.number = atoi(yytext); return NUM;}
+{yylval.string = strdup(yytext); return ID;}
 	YY_BREAK
 case 40:
-/* rule 40 can match eol */
 YY_RULE_SETUP
 #line 61 "code.l"
-{yylval.string = strdup(yytext); return STRING;}
+{yylval.number = atoi(yytext); return NUM;}
 	YY_BREAK
 case 41:
+/* rule 41 can match eol */
 YY_RULE_SETUP
 #line 62 "code.l"
-{return *yytext;}
+{yylval.string = strdup(yytext); return STRING;}
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 #line 63 "code.l"
-{return PLUS;}
+{return *yytext;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
 #line 64 "code.l"
-{return MINUS;}
+{return PLUS;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
 #line 65 "code.l"
-{return STAR;}
+{return MINUS;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
 #line 66 "code.l"
-{return DIV;}
+{return STAR;}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
 #line 67 "code.l"
-{return MOD;}
+{return DIV;}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
 #line 68 "code.l"
-{return ASSIGN;}
+{return MOD;}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
 #line 69 "code.l"
-{return GT;}
+{return ASSIGN;}
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
 #line 70 "code.l"
-{return LT;}
+{return GT;}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
 #line 71 "code.l"
-{return GTE;}
+{return LT;}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
 #line 72 "code.l"
-{return LTE;}
+{return GTE;}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
 #line 73 "code.l"
-{return EQ;}
+{return LTE;}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
 #line 74 "code.l"
-{return NEQ;}
+{return EQ;}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
 #line 75 "code.l"
-{return ENDSTMT;}
+{return NEQ;}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
 #line 76 "code.l"
-{return ADDR;}
+{return ENDSTMT;}
 	YY_BREAK
 case 56:
-/* rule 56 can match eol */
 YY_RULE_SETUP
 #line 77 "code.l"
-{}
+{return ADDR;}
 	YY_BREAK
 case 57:
+/* rule 57 can match eol */
 YY_RULE_SETUP
 #line 78 "code.l"
-{error = strdup("unknown character: "); yyerror(strcat(error,yytext));}
+{}
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 80 "code.l"
+#line 79 "code.l"
+{error = strdup("unknown character: "); yyerror(strcat(error,yytext));}
+	YY_BREAK
+case 59:
+YY_RULE_SETUP
+#line 81 "code.l"
 ECHO;
 	YY_BREAK
-#line 1139 "lex.yy.c"
+#line 1144 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2140,7 +2145,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 80 "code.l"
+#line 81 "code.l"
 
 
 int yywrap(void) {

@@ -400,6 +400,15 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 				}
 				
 				fprintf(fp,"MOV [R%d], R%d\n",reg2, reg1);
+				
+				if(t -> right -> nodetype == leaf_node && t -> left -> nodetype == leaf_node && t -> right -> ctype != NULL && t -> left -> ctype != NULL){ // moving virtual func table ptr
+					getVarMemLoc(t -> right,fp,reg1,False);
+					fprintf(fp,"ADD R%d, 1\n",reg1);
+					fprintf(fp,"MOV R%d, [R%d]\n",reg1,reg1);
+					fprintf(fp,"ADD R%d, 1\n",reg2);
+					fprintf(fp,"MOV [R%d], R%d\n",reg2, reg1);
+				}
+				
 				freeReg();
 				freeReg();
 			break;
