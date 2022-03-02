@@ -189,7 +189,7 @@ if it recieves a
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 					
-		case func_node: 	codeGen(t, fp, NULL);
+		case func_node: 	functionCallerCode(fp,t -> Gentry -> flabel,t -> args,False,-1);
 					fprintf(fp,"MOV R%d, R0\n",reg);
 					break;
 					
@@ -351,7 +351,7 @@ void lib_code_gen(int func, int reg, FILE *fp){
 }
 
 //Main Code Generation Function
-void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
+void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp, int endLabel){
 
 	reg_index reg1, reg2, reg3;
 	int label1 = -1,label2 = -1,label3 = -1, label4 = -1;
@@ -365,8 +365,8 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		
 		//connectors
 		case connector: 
-			codeGen(t -> left,fp,lp);
-			codeGen(t->right,fp,lp);
+			codeGen(t -> left,fp,lp,endLabel);
+			codeGen(t->right,fp,lp,endLabel);
 			break;
 			
 		//read lib call
@@ -417,7 +417,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		case if_node: 
 			if(t -> left -> nodetype == and || t -> left -> nodetype == or){
 				label1 = getLabel();
-				codeGen(t -> left,fp,lp);
+				codeGen(t -> left,fp,lp,endLabel);
 			}
 			else{
 				reg1 = getReg();
@@ -426,12 +426,12 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 				fprintf(fp,"JZ R%d, L%d\n",reg1,label1);
 				freeReg();
 			}
-			codeGen(t -> right -> left,fp,lp); 
+			codeGen(t -> right -> left,fp,lp,endLabel); 
 			if(t -> right -> right != NULL){ // else condition exists
 				label2 = getLabel(); 
 				fprintf(fp,"JMP L%d\n",label2);
 				fprintf(fp,"L%d:\n",label1);
-				codeGen(t -> right -> right,fp,lp);
+				codeGen(t -> right -> right,fp,lp,endLabel);
 			}
 			
 			label2 = label2 > label1 ? label2 : label1;
@@ -450,7 +450,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			reg1 = getReg();
 			oper_code_gen(t -> left,fp,reg1);
 			fprintf(fp,"JZ R%d, L%d\n",reg1,label4);
-			codeGen(t -> right,fp,lp);
+			codeGen(t -> right,fp,lp,endLabel);
 			fprintf(fp,"JMP L%d\n",label3);
 			fprintf(fp,"L%d:\n",label4);
 			
@@ -466,7 +466,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			loopStackPush(lp,label3,label4);
 			
 			fprintf(fp,"L%d:\n",label3);
-			codeGen(t -> right,fp,lp);
+			codeGen(t -> right,fp,lp,endLabel);
 			
 			reg1 = getReg();
 			oper_code_gen(t -> left,fp,reg1);
@@ -500,6 +500,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 			fprintf(fp,"MOV R%d, BP\n",reg2);
 			fprintf(fp,"SUB R%d, 2\n",reg2);
 			fprintf(fp,"MOV [R%d], R%d\n",reg2,reg1);
+			fprintf(fp,"JMP L%d\n",endLabel);
 			freeReg();
 			freeReg();
 			break;
@@ -510,7 +511,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		
 		case and:	
 				if(t -> left -> nodetype == and || t -> left -> nodetype == or){
-					codeGen(t -> left,fp,lp);
+					codeGen(t -> left,fp,lp,endLabel);
 				}else{
 					reg1 = getReg();
 					oper_code_gen(t -> left,fp,reg1);
@@ -519,7 +520,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 				}
 				
 				if(t -> right -> nodetype == and || t -> right -> nodetype == or){
-					codeGen(t -> right,fp,lp);
+					codeGen(t -> right,fp,lp,endLabel);
 				}else{
 					reg1 = getReg();
 					oper_code_gen(t -> right,fp,reg1);
@@ -531,7 +532,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 		case or:
 				label1 = getLabel();
 				if(t -> left -> nodetype == and || t -> left -> nodetype == or){
-					codeGen(t -> left,fp,lp);
+					codeGen(t -> left,fp,lp,endLabel);
 				}else{
 					reg1 = getReg();
 					oper_code_gen(t -> left,fp,reg1);
@@ -540,7 +541,7 @@ void codeGen(struct tnode *t, FILE *fp, struct LoopStack *lp){
 				}
 				
 				if(t -> right -> nodetype == and || t -> right -> nodetype == or){
-					codeGen(t -> right,fp,lp);
+					codeGen(t -> right,fp,lp,endLabel);
 				}else{
 					reg1 = getReg();
 					oper_code_gen(t -> right,fp,reg1);
@@ -575,10 +576,10 @@ void funcCodeGen(struct tnode *t, FILE *fp, int label){
 	else
 		fprintf(fp,"F%d:\n",label);
 
-		
+	int endLabel = getLabel();	
 	functionCalledStartCode(fp);
-	codeGen(t,fp,lp);
-	functionCalledEndCode(fp,label);
+	codeGen(t,fp,lp,endLabel);
+	functionCalledEndCode(fp,endLabel);
 	
 }
 
@@ -683,6 +684,7 @@ void functionCalledStartCode(FILE *fp){
 }
 
 void functionCalledEndCode(FILE *fp,int label){
+	fprintf(fp,"L%d:\n",label);
 	for(int i=1; i<=localMemLoc; ++i)
 		fprintf(fp,"POP R0\n");
 	fprintf(fp,"POP BP\n");
